@@ -30,6 +30,12 @@ class DBStore {
 	private $_class;
 	
 	/**
+	 * cached entity objects
+	 * @var array[DBEntity]
+	 */
+	private $_cachedEntities = array();
+	
+	/**
 	 * cached database stores
 	 * @var array[DBStore]
 	 */
@@ -166,18 +172,25 @@ class DBStore {
 	
 	private function createEntitiesFromResultset($rs, $indexedBy = null) {
 		$entities = array();
+		/* @var $entity DBEntity */
+		$entity = null;
 		$class = $this->_class;
 		while (($row = $this->_connection->fetch_assoc($rs)) != null) {
 			$key = $class::getIdField();
 			if ($indexedBy) {
 				$key = $indexedBy;
 			}
+			$entity = new $class($row);
 			if (is_array($key)) {
-				$entities[] = new $class($row);
+				$entities[] = $entity;
 			}
 			else {
-				$entities[$row[$key]] = new $class($row);
+				$entities[$row[$key]] = $entity;
 			}
+			$idKey = $entity->getGlobalUniqueIdentifier();
+			if (!$idKey)
+				throw new Exception("entity does not have an id value - this should NEVER happen, since this data is being loaded from the database");
+			$this->_cachedEntities[$idKey] = $entity;
 		}
 		$this->_connection->free_result($rs);
 		return $entities;
@@ -232,6 +245,53 @@ class DBStore {
 		return $rs;
 	}
 
+	/**
+	 * Saves the given entity back to the database.
+	 * 
+	 * @param DBEntity $entity
+	 */
+	public function save($entity) {
+		if (isset($this->_cachedEntities[$entity->getGlobalUniqueIdentifier()]))
+			$this->update($entity);
+		else
+			$this->insert($entity);
+	}
+	
+	/**
+	 * Updates the entity, already known to be in the database, with new values.
+	 * 
+	 * @param DBEntity $entity
+	 * @return boolean true on success
+	 */
+	private function update($entity) {
+		$class = $this->_class;
+		$idArray = $entity->getId();
+		if (!is_array($idArray))
+			$idArray = array($entity::getIdField() => $idArray);
+
+		// $idArray should now be key-value pair for ID fields
+		$rowsAffected = $this->_connection->update($entity::getTableName(), $entity->getDirtyProperties(), $idArray);
+		if ($rowsAffected > 1)
+			throw new Exception('multiple rows have been affected in entity update for ID ' . $entity->getGlobalUniqueIdentifier());
+		return ($rowsAffected == 1);
+	}
+	
+	/**
+	 * Inserts the entity, already known to NOT be in the database, with new values.
+	 * 
+	 * @param DBEntity $entity
+	 */
+	private function insert($entity) {
+		$class = $this->_class;
+		if ($entity->getGlobalUniqueIdentifier())
+			throw new Exception("cannot insert entity which already has ID value");
+		
+		$id = $this->_connection->insert($entity::getTableName(), $entity->getDirtyProperties());
+		if ($id && ($id !== TRUE)) {
+			$entity->setId($id);
+		}
+	}
+	
 	/**
 	 * Resets the profile array.  Call this before any getAll calls that should be accumulated.
 	 */

@@ -10,7 +10,7 @@ $animalInventories = AnimalInventory::getAll();
 
 /* @var $animal Animal */
 foreach ($animals as $id => $animal) {
-	echo($id.': '.$animal->getName().(isset($animalInventories[$id]) ? ' with ' . $animalInventories[$id]->getQoh() : '')."<br>");
+	echo($id.': '.$animal->getName().' ('.$animal->getLegs().') '.(isset($animalInventories[$id]) ? ' with ' . $animalInventories[$id]->getQoh() : '')."<br>");
 	/* @var $ap AnimalProperty */
 	foreach ($animal->getAnimalProperties() AS $ap) {
 		echo(' - ' . $ap->getTypeName());
@@ -19,4 +19,6 @@ foreach ($animals as $id => $animal) {
 		}
 		echo('<br>');
 	}
+	$animal->incrementLegs();
+	$animal->save();
 }

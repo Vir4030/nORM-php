@@ -48,6 +48,10 @@ class Animal extends DBEntity {
 		$this->legs = $legs;
 	}
 	
+	public function incrementLegs() {
+		$this->legs++;
+	}
+	
 	public function getSound() {
 		return $this->sound;
 	}

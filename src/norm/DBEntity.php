@@ -24,9 +24,16 @@ abstract class DBEntity {
 	protected static $_tableName;
 	
 	/**
-	 * The field or array of fields to use as a unique identifier.
+	 * The field or array of fields to use as a unique identifier.  By default, this is set to
+	 * 'id', which is the simplest possible name for an ID field - nothing more.  It is strongly
+	 * recommended that this value be set in all subobjects.
 	 * 
-	 * @var mixed
+	 * This field can also contain an array of field names.  In this case, the primary key has
+	 * multiple columns in it.  This is not recommended, but it is supported.  It is assumed that
+	 * all ID fields will be set at the same time.  Please do not set one but not all of them.
+	 * I'm not sure what the use case could possibly be for that, but it will break things.
+	 * 
+	 * @var string|array[string]
 	 */
 	protected static $_idField = 'id';
 	
@@ -165,13 +172,58 @@ abstract class DBEntity {
 		if (is_array($keyField)) {
 			$id = array();
 			foreach ($keyField AS $field) {
-				$id[$field] = $this->$field;
+				if ($this->$field != null)
+					$id[$field] = $this->$field;
 			}
 		}
 		else {
 			$id = $this->$keyField;
 		}
 		return $id;
+	}
+
+	/**
+	 * Sets the assigned numeric ID value unique to this entity.
+	 * 
+	 * @param int $id
+	 * @throws Exception when the key is not a singular field
+	 */
+	public function setId($id) {
+		$keyField = static::$_idField;
+		if (is_array($keyField))
+			throw new Exception('cannot set ID value for multi-field identifiersh - only auto-increment, effectively');
+		$this->$keyField = $id;
+	}
+	
+	/**
+	 * Gets an ID key that is guaranteed to be unique to this entity - across all entities.  This ID key
+	 * can serve to uniquely identify this object in all caching scenarios.
+	 * 
+	 * @return string
+	 */
+	public function getGlobalUniqueIdentifier() {
+		$uqid = '';
+		$keyField = static::$_idField;
+		if (is_array($keyField)) {
+			foreach ($keyField AS $field) {
+				if ($this->$field != null)
+					$uqid .= '-' . $this->$field;
+			}
+		}
+		else {
+			$uqid .= '-' . $this->keyField;
+		}
+		if ($uqid == '')
+			return null;
+		return get_class($this) . $uqid;
+	}
+	
+	/**
+	 * Saves this object to the backing database.
+	 */
+	public function save() {
+		static::getStore()->save($this);
+		$this->_wasLoadedFromDatabase = true;
 	}
 	
 	/**
