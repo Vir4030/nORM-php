@@ -26,8 +26,22 @@ class MSSQLConnection extends DBConnection {
 		$this->_db = null;
 	}
 	
+	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::query()
+	 */
 	public function query($sql) {
-		return mssql_query($sql, $this->_db);
+		$this->logQueryBegin($sql);
+		$rs = mssql_query($sql, $this->_db);
+		if ($rs === false) {
+			$message = mssql_get_last_message();
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		if ($rs === true)
+			throw new Exception("No resultset returned: "+$sql);
+		$this->logQuerySplit();
+		return $rs;
 	}
 	
 	/**
@@ -54,7 +68,15 @@ class MSSQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value);
 		}
 		$sql .= ';';
-		mssql_query($sql, $this->_db);
+		
+		$this->logQueryBegin($sql);
+		if (mssql_query($sql, $this->_db) === false) {
+			$message = mssql_get_last_message();
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		
+		$this->logQueryEnd();
 		return mssql_rows_affected($this->_db);
 	}
 	
@@ -78,8 +100,14 @@ class MSSQLConnection extends DBConnection {
 			$sqlValues .= $this->quote($value);
 		}
 		$sql = $sqlFields . $sqlValues . ');';
-		if (!mssql_query($sql, $this->_db))
-			throw new Exception(mssql_get_last_message());
+		
+		$this->logQueryBegin($sql);
+		if (!mssql_query($sql, $this->_db)) {
+			$message = mssql_get_last_message();
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		$this->logQueryEnd();
 		
 		$rs = mssql_query("SELECT @@IDENTITY as last_insert_id");
 		$id = mssql_fetch_field($rs, 0);

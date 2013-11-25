@@ -22,3 +22,14 @@ foreach ($animals as $id => $animal) {
 	$animal->incrementLegs();
 	$animal->save();
 }
+
+/* @var $db DBConnection */
+$db = DBConnection::get('norm');
+echo('=== Query Log ===<br>');
+foreach ($db->getQueryLog() as $queryLog) {
+	if ($queryLog->isCompleted())
+		echo($queryLog->getQueryString() . '<br> - completed in ' . number_format($queryLog->getCompleteTime() * 1000.0, 0) . 'ms');
+	else
+		echo($queryLog->getQueryString() . '<br> - error: ' . $queryLog->getErrorMessage());
+	echo('<br>');
+}

@@ -68,7 +68,14 @@ abstract class DBConnection {
 	 * 
 	 * @var array[mixed]
 	 */
-	private $_queryLog = array();
+	private $_queryLogArray = array();
+	
+	/**
+	 * the current query
+	 * 
+	 * @var DBLog
+	 */
+	private $_currentQueryLog = null;
 	
 	/**
 	 * Registers the given configuration with the given identifier (name).
@@ -272,5 +279,31 @@ abstract class DBConnection {
 	 */
 	public function getCatalog() {
 		return $this->_catalog;
+	}
+	
+	/**
+	 * Gets the query log.
+	 * 
+	 * @return array[DBLog] the query log
+	 */
+	public function getQueryLog() {
+		return $this->_queryLogArray;
+	}
+	
+	protected function logQueryBegin($sql) {
+		$this->_currentQueryLog = new DBLog($sql);
+		$this->_queryLogArray[] = $this->_currentQueryLog;
+	}
+	
+	protected function logQuerySplit() {
+		$this->_currentQueryLog->split();
+	}
+	
+	protected function logQueryEnd() {
+		$this->_currentQueryLog->end();
+	}
+	
+	protected function logQueryError($message) {
+		$this->_currentQueryLog->error($message);
 	}
 }

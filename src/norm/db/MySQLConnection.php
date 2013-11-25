@@ -20,9 +20,13 @@ class MySQLConnection extends DBConnection {
 	}
 	
 	public function query($sql) {
+		$this->logQueryBegin($sql);
 		if (($rs = mysqli_query($this->_db, $sql)) === false) {
-			throw new Exception('There has been a MySQL error: ' . mysqli_error($this->_db) . ' with SQL: ' . $sql);
+			$message = mysqli_error($this->_db);
+			$this->logQueryError($message);
+			throw new Exception($message);
 		}
+		$this->logQuerySplit();
 		return $rs;
 	}
 
@@ -50,20 +54,25 @@ class MySQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value);
 		}
 		$sql .= ';';
-		if (!mysqli_query($this->_db, $sql))
-			throw new Exception(mysqli_error($this->_db));
-			return mysqli_affected_rows($this->_db);
+		$this->logQueryBegin($sql);
+		if (!mysqli_query($this->_db, $sql)) {
+			$message = mysqli_error($this->_db);
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		$this->logQueryEnd();
+		return mysqli_affected_rows($this->_db);
 	}
 	
 	/**
-		* Inserts data into the table as a new record.
-		*
-		* @param string       $tableName the name of the table being inserted into
-		* @param array[mixed] $fields    a key-value array of fields and values
-		* @return int|true the auto-increment ID, if existing, otherwise a true, indicating success
-		* @throws Exception when the SQL causes an exception
-		*/
-		public function insert($tableName, $fields) {
+	 * Inserts data into the table as a new record.
+	 *
+	 * @param string       $tableName the name of the table being inserted into
+	 * @param array[mixed] $fields    a key-value array of fields and values
+	 * @return int|true the auto-increment ID, if existing, otherwise a true, indicating success
+	 * @throws Exception when the SQL causes an exception
+	 */
+	public function insert($tableName, $fields) {
 		$sqlFields = 'INSERT INTO ' . $tableName . '(';
 				$sqlValues = ') VALUES (';
 				$count = 0;
@@ -76,8 +85,14 @@ class MySQLConnection extends DBConnection {
 		$sqlValues .= $this->quote($value);
 		}
 		$sql = $sqlFields . $sqlValues . ');';
-		if (!mysqli_query($this->_db, $sql))
-			throw new Exception(mysqli_error($this->_db));
+		
+		$this->logQueryBegin($sql);
+		if (!mysqli_query($this->_db, $sql)) {
+			$message = mysqli_error($this->_db);
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		$this->logQueryEnd();
 		
 		$id = mysqli_insert_id($this->_db);
 		if (!$id)
@@ -91,6 +106,7 @@ class MySQLConnection extends DBConnection {
 	
 	public function free_result($rs) {
 		mysqli_free_result($rs);
+		$this->logQueryEnd();
 	}
 	
 	public function quote($unsafeValue) {

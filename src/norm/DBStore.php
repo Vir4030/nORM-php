@@ -260,6 +260,8 @@ class DBStore {
 	/**
 	 * Updates the entity, already known to be in the database, with new values.
 	 * 
+	 * This private method is called from within the save() method.
+	 * 
 	 * @param DBEntity $entity
 	 * @return boolean true on success
 	 */
@@ -278,6 +280,8 @@ class DBStore {
 	
 	/**
 	 * Inserts the entity, already known to NOT be in the database, with new values.
+	 * 
+	 * This private method is called from within the save() method.
 	 * 
 	 * @param DBEntity $entity
 	 */
