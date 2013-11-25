@@ -1,4 +1,5 @@
 <?php
+$start = microtime(true);
 require('dbconfig.php');
 require('../src/include_test.php');
 
@@ -28,8 +29,10 @@ $db = DBConnection::get('norm');
 echo('=== Query Log ===<br>');
 foreach ($db->getQueryLog() as $queryLog) {
 	if ($queryLog->isCompleted())
-		echo($queryLog->getQueryString() . '<br> - completed in ' . number_format($queryLog->getCompleteTime() * 1000.0, 0) . 'ms');
+		echo($queryLog->getQueryString() . '<br> - completed in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms');
 	else
 		echo($queryLog->getQueryString() . '<br> - error: ' . $queryLog->getErrorMessage());
 	echo('<br>');
 }
+$end = microtime(true);
+echo('<b>Processing completed in ' . number_format(1000.0 * ($end - $start), 2) . 'ms</b>');
