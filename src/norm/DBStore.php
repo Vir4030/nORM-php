@@ -164,32 +164,27 @@ class DBStore {
 	 * 
 	 * @param mixed $rs
 	 *  the implementation-specific resultset object, to be passed into the connection
-	 * @param string $indexedBy
-	 *   the field to index the results by
+	 * @param boolean $indexed
+	 *  true if the array should be indexed by the global unique identifier for each object
 	 * @return array[DBEntity]
 	 *  the array of entities created from the resultset
 	 */
 	
-	private function createEntitiesFromResultset($rs, $indexedBy = null) {
+	private function createEntitiesFromResultset($rs, $indexed = false) {
 		$entities = array();
 		/* @var $entity DBEntity */
 		$entity = null;
 		$class = $this->_class;
 		while (($row = $this->_connection->fetch_assoc($rs)) != null) {
-			$key = $class::getIdField();
-			if ($indexedBy) {
-				$key = $indexedBy;
-			}
 			$entity = new $class($row);
-			if (is_array($key)) {
-				$entities[] = $entity;
-			}
-			else {
-				$entities[$row[$key]] = $entity;
-			}
 			$idKey = $entity->getGlobalUniqueIdentifier();
 			if (!$idKey)
 				throw new Exception("entity does not have an id value - this should NEVER happen, since this data is being loaded from the database");
+			if ($indexed) {
+				$entities[$idKey] = $entity;
+			} else {
+				$entities[] = $entity;
+			}
 			$this->_cachedEntities[$idKey] = $entity;
 		}
 		$this->_connection->free_result($rs);
@@ -230,18 +225,21 @@ class DBStore {
 	/**
 	 * Gets all of the entities in this store.  This is essentially calling the following SQL:
 	 * 
-	 * SQL => SELECT * FROM {_tableName}
+	 * SQL => SELECT * FROM {_tableName} ORDER BY {_orderBy}
 	 * 
 	 * @return array[DBEntity]
 	 */
-	public function getAll($selector = null, $orderBy = null, $indexedBy = null) {
+	public function getAll($selector = null, $orderBy = null) {
 		$results = array();
+		
 		$this->_profileArray['query'] -= round(microtime(true) * 1000);
 		$rs = $this->queryPrimitive($selector, $orderBy);
 		$this->_profileArray['query'] += round(microtime(true) * 1000);
+		
 		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
-		$rs = $this->createEntitiesFromResultset($rs, $indexedBy);
+		$rs = $this->createEntitiesFromResultset($rs, ($orderBy == null));
 		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
+		
 		return $rs;
 	}
 

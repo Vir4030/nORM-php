@@ -237,13 +237,13 @@ abstract class DBEntity {
 	}
 	
 	/**
-	 * Gets records for this class based on a selector.
+	 * Gets one entity based on a selector.
 	 * 
 	 * @param mixed $selector
-	 * @return array[DBEntity]
+	 * @return DBEntity
 	 */
-	public static function get($selector = null, $orderedBy = null, $indexed = null) {
-		return static::getStore()->get($selector, $orderedBy, $indexed);
+	public static function get($selector = null) {
+		return static::getStore()->get($selector);
 	}
 	
 	/**
