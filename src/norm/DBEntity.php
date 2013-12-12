@@ -226,6 +226,12 @@ abstract class DBEntity {
 		$this->_wasLoadedFromDatabase = true;
 	}
 	
+	public function getOneToManyData($class, $foreignField) {
+		/* @var $store DBStore */
+		$store = $class::getStore();
+		return $store->getAll(array($foreignField => $this->getId()));
+	}
+	
 	/**
 	 * Gets the store for this class.
 	 * 

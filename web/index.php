@@ -3,8 +3,8 @@ $start = microtime(true);
 require('dbconfig.php');
 require('../src/include_test.php');
 
-AnimalPropertyType::cacheAll();
-AnimalProperty::cacheAll();
+AnimalPropertyType::getAll();
+AnimalProperty::getAll();
 
 $animals = Animal::getAll();
 $animalInventories = AnimalInventory::getAll();

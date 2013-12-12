@@ -204,6 +204,10 @@ class DBStore {
 	 *   the value of the primary key or a key-value pairing array
 	 */
 	public function get($selector) {
+		if (!is_array($selector) && isset($this->_cachedEntities[$selector])) {
+			echo('cache hit');
+			return $this->_cachedEntities[$selector];
+		}
 		$rs = $this->queryPrimitive($selector);
 		$entities = $this->createEntitiesFromResultset($rs);
 		if (count($entities) > 1) {

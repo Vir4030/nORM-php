@@ -5,31 +5,8 @@ class Animal extends DBEntity {
 	
 	protected static $_tableName = 'animal';
 	
-	private $_animalPropertyObjects = null;
-	
-	private $_animalProperties = null;
-	
-	/**
-	 * Gets the AnimalProperty entities associated with this animal.
-	 * 
-	 * @return array[AnimalProperty]
-	 *  the animal properties
-	 */
-	public function getAnimalPropertiesObjects() {
-		if ($this->_animalPropertyObjects === null) {
-			$this->_animalPropertyObjects = AnimalProperty::getByAnimalId($this->getId());
-		}
-		return $this->_animalPropertyObjects;
-	}
-	
 	public function getAnimalProperties() {
-		if ($this->_animalProperties === null) {
-			$this->_animalProperties = array();
-			foreach ($this->getAnimalPropertiesObjects() AS $ap) {
-				$this->_animalProperties[$ap->getTypeName()] = $ap;
-			}
-		}
-		return $this->_animalProperties;
+		return $this->getOneToManyData('AnimalProperty', 'animal_id');
 	}
 	
 	public function getName() {
