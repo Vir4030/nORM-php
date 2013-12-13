@@ -7,6 +7,11 @@ class AnimalProperty extends DBEntity {
 	
 	protected static $_idField = array('animal_id', 'property_type_id');
 	
+	protected static $_foreignKeys = array(
+		'Animal' => 'animal_id',
+		'AnimalPropertyType' => 'property_type_id'
+	);
+	
 	public function _setDefaultValues() {
 		$this->set_on_date = new DateTime();
 	}

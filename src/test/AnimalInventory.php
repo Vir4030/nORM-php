@@ -7,6 +7,10 @@ class AnimalInventory extends DBEntity {
 	
 	protected static $_idField = 'animal_id';
 	
+	protected static $_foreignKeys = array(
+		'Animal' => 'animal_id'
+	);
+	
 	public function getQoh() {
 		return $this->qoh;
 	}

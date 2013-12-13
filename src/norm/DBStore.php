@@ -177,7 +177,7 @@ class DBStore {
 		$class = $this->_class;
 		while (($row = $this->_connection->fetch_assoc($rs)) != null) {
 			$entity = new $class($row);
-			$idKey = $entity->getGlobalUniqueIdentifier();
+			$idKey = $entity->getLocalUniqueIdentifier();
 			if (!$idKey)
 				throw new Exception("entity does not have an id value - this should NEVER happen, since this data is being loaded from the database");
 			if ($indexed) {
@@ -204,8 +204,11 @@ class DBStore {
 	 *   the value of the primary key or a key-value pairing array
 	 */
 	public function get($selector) {
+		$class = $this->_class;
+		if (($selector == $class::getIdField())) {
+			echo('key grab<br>');
+		}
 		if (!is_array($selector) && isset($this->_cachedEntities[$selector])) {
-			echo('cache hit');
 			return $this->_cachedEntities[$selector];
 		}
 		$rs = $this->queryPrimitive($selector);
@@ -253,7 +256,7 @@ class DBStore {
 	 * @param DBEntity $entity
 	 */
 	public function save($entity) {
-		if (isset($this->_cachedEntities[$entity->getGlobalUniqueIdentifier()]))
+		if (isset($this->_cachedEntities[$entity->getLocalUniqueIdentifier()]))
 			$this->update($entity);
 		else
 			$this->insert($entity);
@@ -289,7 +292,7 @@ class DBStore {
 	 */
 	private function insert($entity) {
 		$class = $this->_class;
-		if ($entity->getGlobalUniqueIdentifier())
+		if ($entity->getLocalUniqueIdentifier())
 			throw new Exception("cannot insert entity which already has ID value");
 		
 		$id = $this->_connection->insert($entity::getTableName(), $entity->getDirtyProperties());

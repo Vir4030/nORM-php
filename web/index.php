@@ -4,10 +4,9 @@ require('dbconfig.php');
 require('../src/include_test.php');
 
 AnimalPropertyType::getAll();
-AnimalProperty::getAll();
 
 $animals = Animal::getAll();
-$animalInventories = AnimalInventory::getAll();
+Animal::loadForeign(array('AnimalInventory', 'AnimalProperty' => 'AnimalPropertyType'));
 
 /* @var $animal Animal */
 foreach ($animals as $id => $animal) {

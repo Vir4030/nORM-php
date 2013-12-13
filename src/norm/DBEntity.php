@@ -38,6 +38,48 @@ abstract class DBEntity {
 	protected static $_idField = 'id';
 	
 	/**
+	 * An array describing the data owned by this entity.  This array should be overridden
+	 * by subclasses to contain information about the data owned.
+	 * 
+	 * array('OwnedEntity' => 'parent_id');
+	 * 	OwnedEntity - the entity class for the owned ID
+	 *  parent_id - the field which links back to this entity's idField
+	 * 
+	 * array('OwnedEntity' => array('parent_code' => 'code'));
+	 * 	parent_code - the field which links back to this entity
+	 *  code - the field in this entity to which the field links
+	 * 
+	 * array('OwnedEntity' => array('parent_code' => 'code',
+	 *                              'parent_num' => 'num'));
+	 * parent_num - the second field in a multi-field foreign key
+	 * num - the field in this entity to which the second field links
+	 * 
+	 * @var array[string|array[string]]
+	 */
+	protected static $_ownedData = array();
+	
+	/**
+	 * An array describing the data to which this entity links through a foreign-key-type
+	 * relationship.
+	 * 
+	 * array('ForeignEntity' => 'foreign_id');
+	 * 	ForeignEntity - the entity class for the foreign data
+	 *  foreign_id - the field in this class which links to the foreign entity's idField
+	 * 
+	 * array('ForeignEntity' => array('foreign_code' => 'code');
+	 *  foreign_code - the field in this class which links to the foreign entity
+	 *  code - the field in the foreign entity to which this field links
+	 * 
+	 * array('ForeignEntity' => array('foreign_code' => 'code',
+	 *                                'foreign_num' => 'num'));
+	 * foreign_num - the second field in this class which links to the foreign entity
+	 * num - the field in the foreign entity to which the second field links
+	 * 
+	 * @var array[string|array[string]]
+	 */
+	protected static $_foreignKeys = array();
+	
+	/**
 	 * This properties array holds the raw record data straight from the database.
 	 * 
 	 * @var array[mixed]
@@ -196,26 +238,34 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Gets an ID key that is guaranteed to be unique to this entity - only across this
+	 * entity type.
+	 * 
+	 * @return unknown
+	 */
+	public function getLocalUniqueIdentifier() {
+		$uqid = '';
+		$keyField = static::$_idField;
+		if (is_array($keyField)) {
+			foreach ($keyField AS $field) {
+				if ($uqid)
+					$uqid .= '-';
+				$uqid .= $this->$field;
+			}
+		} else {
+			$uqid = $this->$keyField;
+		}
+		return $uqid;
+	}
+	
+	/**
 	 * Gets an ID key that is guaranteed to be unique to this entity - across all entities.  This ID key
 	 * can serve to uniquely identify this object in all caching scenarios.
 	 * 
 	 * @return string
 	 */
 	public function getGlobalUniqueIdentifier() {
-		$uqid = '';
-		$keyField = static::$_idField;
-		if (is_array($keyField)) {
-			foreach ($keyField AS $field) {
-				if ($this->$field != null)
-					$uqid .= '-' . $this->$field;
-			}
-		}
-		else {
-			$uqid .= '-' . $this->keyField;
-		}
-		if ($uqid == '')
-			return null;
-		return get_class($this) . $uqid;
+		return get_class($this) . '-' . $this->getLocalUniqueIdentifier();
 	}
 	
 	/**
@@ -259,5 +309,9 @@ abstract class DBEntity {
 	 */
 	public static function getAll($selector = null, $orderedBy = null, $indexed = null) {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
+	}
+	
+	public static function loadForeign($foreignArray, $selector = null) {
+		
 	}
 }
