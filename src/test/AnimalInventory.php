@@ -7,9 +7,7 @@ class AnimalInventory extends DBEntity {
 	
 	protected static $_idField = 'animal_id';
 	
-	protected static $_foreignKeys = array(
-		'Animal' => 'animal_id'
-	);
+	const FK_ANIMAL_ANIMAL_ID = 'FK_Animal_Inventory_Animal_Id';
 	
 	public function getQoh() {
 		return $this->qoh;
@@ -31,3 +29,7 @@ class AnimalInventory extends DBEntity {
 		$this->last_into_stock = $lastIntoStock;
 	}
 }
+
+DBEntity::initForeignKeys(array(
+		new DBForeignKey(AnimalProperty::FK_ANIMAL_ANIMAL_ID, 'Animal', 'id', 'AnimalProperty', 'animal_id'),
+));

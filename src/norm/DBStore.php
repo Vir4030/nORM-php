@@ -300,24 +300,4 @@ class DBStore {
 			$entity->setId($id);
 		}
 	}
-	
-	/**
-	 * Resets the profile array.  Call this before any getAll calls that should be accumulated.
-	 */
-	public function resetProfileArray() {
-		$this->_profileArray = array(
-				'query' => 0,
-				'fetch' => 0
-		);
-	}
-	
-	/**
-	 * Gets the profile array.  Call this to get the profile array.  Key-value pairs show
-	 * performance of query vs fetch time.
-	 * 
-	 * @return array[numeric]
-	 */
-	public function getProfileArray() {
-		return $this->_profileArray;
-	}
 }

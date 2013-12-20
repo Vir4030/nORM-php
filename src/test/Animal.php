@@ -1,14 +1,10 @@
 <?php
+use norm\DBForeignKey;
 class Animal extends DBEntity {
 	
 	protected static $_database = 'norm';
 	
 	protected static $_tableName = 'animal';
-	
-	protected static $_ownedData = array(
-		'AnimalProperty' => 'animal_id',
-		'AnimalInventory' => 'animal_id'
-	);
 	
 	public function getAnimalProperties() {
 		return $this->getOneToManyData('AnimalProperty', 'animal_id');

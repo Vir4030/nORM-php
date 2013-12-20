@@ -311,7 +311,31 @@ abstract class DBEntity {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
 	}
 	
-	public static function loadForeign($foreignArray, $selector = null) {
+	private static function _loadOwnedData($key, $selector, $subForeignArray) {
 		
+	}
+	
+	private static function _loadForeignData($key, $selector, $subForeignArray) {
+		
+	}
+	
+	public static function loadForeign($foreignArray, $selector = null) {
+		foreach ($foreignArray AS $key => $value) {
+			$subForeignArray = array();
+			if (is_array($value)) {
+				$subForeignArray = $value;
+			} else {
+				$key = $value;
+			}
+			if (isset(static::$_ownedData[$key])) {
+				static::_loadOwnedData($key, $selector, $subForeignArray);
+			}
+			else if (isset(static::$_foreignKeys[$key])) {
+				static::_loadForeignData($key, $selector, $subForeignArray);
+			}
+			else {
+				throw new Exception('Foreign data undefined for key ' . $key);
+			}
+		}
 	}
 }

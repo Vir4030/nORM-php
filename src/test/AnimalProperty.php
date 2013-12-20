@@ -7,10 +7,9 @@ class AnimalProperty extends DBEntity {
 	
 	protected static $_idField = array('animal_id', 'property_type_id');
 	
-	protected static $_foreignKeys = array(
-		'Animal' => 'animal_id',
-		'AnimalPropertyType' => 'property_type_id'
-	);
+	const FK_ANIMAL_ANIMAL_ID = 'FK_Animal_Property_Animal_Id';
+	
+	const FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID = 'FK_ANIMAL_PROPERTY_PROPERTY_TYPE_ID';
 	
 	public function _setDefaultValues() {
 		$this->set_on_date = new DateTime();
@@ -44,3 +43,7 @@ class AnimalProperty extends DBEntity {
 		return $this->property_type_id;
 	}
 }
+
+AnimalProperty::declareForeignKey(AnimalProperty::FK_ANIMAL_ANIMAL_ID, 'animal_id', 'Animal');
+AnimalProperty::declareForeignKey(
+	AnimalProperty::FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID, 'property_type_id', 'AnimalPropertyType');
