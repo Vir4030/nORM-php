@@ -9,7 +9,7 @@ class AnimalProperty extends DBEntity {
 	
 	const FK_ANIMAL_ANIMAL_ID = 'FK_Animal_Property_Animal_Id';
 	
-	const FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID = 'FK_ANIMAL_PROPERTY_PROPERTY_TYPE_ID';
+	const FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID = 'FK_Animal_Property_Property_Type_Id';
 	
 	public function _setDefaultValues() {
 		$this->set_on_date = new DateTime();
@@ -44,6 +44,6 @@ class AnimalProperty extends DBEntity {
 	}
 }
 
-AnimalProperty::declareForeignKey(AnimalProperty::FK_ANIMAL_ANIMAL_ID, 'animal_id', 'Animal');
+AnimalProperty::declareForeignKey(AnimalProperty::FK_ANIMAL_ANIMAL_ID, 'animal_id', 'Animal', true);
 AnimalProperty::declareForeignKey(
 	AnimalProperty::FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID, 'property_type_id', 'AnimalPropertyType');

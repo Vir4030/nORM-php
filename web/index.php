@@ -3,10 +3,13 @@ $start = microtime(true);
 require('dbconfig.php');
 require('../src/include_test.php');
 
-AnimalPropertyType::getAll();
+// AnimalPropertyType::getAll();
 
 $animals = Animal::getAll();
-Animal::loadForeign(array('AnimalInventory', 'AnimalProperty' => 'AnimalPropertyType'));
+Animal::loadForeign(
+	array(
+		AnimalInventory::FK_ANIMAL_ANIMAL_ID,
+		AnimalProperty::FK_ANIMAL_ANIMAL_ID => AnimalProperty::FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID));
 
 /* @var $animal Animal */
 foreach ($animals as $id => $animal) {

@@ -30,6 +30,4 @@ class AnimalInventory extends DBEntity {
 	}
 }
 
-DBEntity::initForeignKeys(array(
-		new DBForeignKey(AnimalProperty::FK_ANIMAL_ANIMAL_ID, 'Animal', 'id', 'AnimalProperty', 'animal_id'),
-));
+AnimalInventory::declareForeignKey(AnimalInventory::FK_ANIMAL_ANIMAL_ID, 'animal_id', 'Animal', true);

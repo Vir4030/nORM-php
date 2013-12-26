@@ -4,19 +4,19 @@ class DBForeignKey {
 	
 	private $_name;
 	
-	private $_primaryTable;
+	private $_primaryEntityClass;
 	
 	private $_primaryColumns;
 	
-	private $_foreignTable;
+	private $_foreignEntityClass;
 	
 	private $_foreignColumns;
 	
-	public function __construct($name, $primaryTable, $primaryColumns, $foreignTable, $foreignColumns) {
+	public function __construct($name, $primaryEntityClass, $primaryColumns, $foreignEntityClass, $foreignColumns) {
 		$this->_name = $name;
-		$this->_primaryTable = $primaryTable;
+		$this->_primaryEntityClass = $primaryEntityClass;
 		$this->_primaryColumns = $primaryColumns;
-		$this->_foreignTable = $foreignTable;
+		$this->_foreignEntityClass = $foreignEntityClass;
 		$this->_foreignColumns = $foreignColumns;
 	}
 	
@@ -24,16 +24,16 @@ class DBForeignKey {
 		return $this->_name;
 	}
 	
-	public function getPrimaryTable() {
-		return $this->_primaryTable;
+	public function getPrimaryEntityClass() {
+		return $this->_primaryEntityClass;
 	}
 	
 	public function getPrimaryColumns() {
 		return $this->_primaryColumns;
 	}
 	
-	public function getForeignTable() {
-		return $this->_foreignTable;
+	public function getForeignEntityClass() {
+		return $this->_foreignEntityClass;
 	}
 	
 	public function getForeignColumns() {

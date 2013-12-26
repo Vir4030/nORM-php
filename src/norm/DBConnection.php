@@ -98,6 +98,10 @@ abstract class DBConnection {
 	 *   the configuration
 	 */
 	public static function get($name) {
+		if (!$name)
+			throw new Exception('database configuration name not supplied');
+		if (!isset(DBConnection::$_cachedConfigurations[$name]))
+			throw new Exception('cannot find database configuration for ' . $name);
 		return DBConnection::$_cachedConfigurations[$name];
 	}
 	

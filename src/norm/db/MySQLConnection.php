@@ -22,7 +22,7 @@ class MySQLConnection extends DBConnection {
 	public function query($sql) {
 		$this->logQueryBegin($sql);
 		if (($rs = mysqli_query($this->_db, $sql)) === false) {
-			$message = mysqli_error($this->_db);
+			$message = mysqli_error($this->_db) . ': ' . $sql;
 			$this->logQueryError($message);
 			throw new Exception($message);
 		}

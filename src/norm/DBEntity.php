@@ -38,44 +38,23 @@ abstract class DBEntity {
 	protected static $_idField = 'id';
 	
 	/**
-	 * An array describing the data owned by this entity.  This array should be overridden
-	 * by subclasses to contain information about the data owned.
+	 * An array describing the data owned by this entity.  This array is filled through calls to
+	 * static::_registerOwnedData, which is called from static::declareForeignKey.
 	 * 
-	 * array('OwnedEntity' => 'parent_id');
-	 * 	OwnedEntity - the entity class for the owned ID
-	 *  parent_id - the field which links back to this entity's idField
+	 * The key is the unique name of the foreign key.
 	 * 
-	 * array('OwnedEntity' => array('parent_code' => 'code'));
-	 * 	parent_code - the field which links back to this entity
-	 *  code - the field in this entity to which the field links
-	 * 
-	 * array('OwnedEntity' => array('parent_code' => 'code',
-	 *                              'parent_num' => 'num'));
-	 * parent_num - the second field in a multi-field foreign key
-	 * num - the field in this entity to which the second field links
-	 * 
-	 * @var array[string|array[string]]
+	 * @var array[DBForeignKey]
 	 */
 	protected static $_ownedData = array();
 	
 	/**
 	 * An array describing the data to which this entity links through a foreign-key-type
-	 * relationship.
+	 * relationship.  This array is filled through calls to static::_registerForeignKey, which is
+	 * called from static::declareForeignKey.
 	 * 
-	 * array('ForeignEntity' => 'foreign_id');
-	 * 	ForeignEntity - the entity class for the foreign data
-	 *  foreign_id - the field in this class which links to the foreign entity's idField
+	 * The key is the unique name of the foreign key.
 	 * 
-	 * array('ForeignEntity' => array('foreign_code' => 'code');
-	 *  foreign_code - the field in this class which links to the foreign entity
-	 *  code - the field in the foreign entity to which this field links
-	 * 
-	 * array('ForeignEntity' => array('foreign_code' => 'code',
-	 *                                'foreign_num' => 'num'));
-	 * foreign_num - the second field in this class which links to the foreign entity
-	 * num - the field in the foreign entity to which the second field links
-	 * 
-	 * @var array[string|array[string]]
+	 * @var array[DBForeignKey]
 	 */
 	protected static $_foreignKeys = array();
 	
@@ -204,6 +183,23 @@ abstract class DBEntity {
 	}
 
 	/**
+	 * Checks if the value or values provided could be a valid ID value based on the count alone.
+	 * 
+	 * @param mixed|array[mixed] $idValue
+	 *  the value or array of values to check for validity on count
+	 * @return boolean
+	 *  true if the argument represents a potentially valid value on count alone
+	 */
+	public static function isValidIdCount($idValue) {
+		$idField = static::getIdField();
+		if (is_array($idValue) != is_array($idField))
+			return false;
+		if (is_array($idValue) && (count($idValue) != count($idField)))
+			return false;
+		return true;
+	}
+	
+	/**
 	 * Gets the unique identifier values for this record.
 	 * 
 	 * @return mixed|array[mixed]
@@ -227,13 +223,15 @@ abstract class DBEntity {
 	/**
 	 * Sets the assigned numeric ID value unique to this entity.
 	 * 
+	 * TODO: make this method support multi-field identifiers
+	 * 
 	 * @param int $id
 	 * @throws Exception when the key is not a singular field
 	 */
 	public function setId($id) {
 		$keyField = static::$_idField;
 		if (is_array($keyField))
-			throw new Exception('cannot set ID value for multi-field identifiersh - only auto-increment, effectively');
+			throw new Exception('cannot set ID value for multi-field identifiers - only auto-increment, effectively');
 		$this->$keyField = $id;
 	}
 	
@@ -311,31 +309,106 @@ abstract class DBEntity {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
 	}
 	
+	/**
+	 * 
+	 * @param DBForeignKey $key
+	 * @param mixed $selector
+	 * @param unknown $subForeignArray
+	 */
 	private static function _loadOwnedData($key, $selector, $subForeignArray) {
-		
+		echo('loading owned data for ' . $key->getName() . '<br>');
+		$foreignColumns = $key->getForeignColumns();
+		$primaryColumns = $key->getPrimaryColumns();
+		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
+			(is_array($primaryColumns) && (count($primaryColumns) > 1)))
+			throw new Exception('cannot load owned data through multi-column foreign key - yet');
+		if (is_array($foreignColumns))
+			$foreignColumns = $foreignColumns[0];
+		if (is_array($primaryColumns))
+			$primaryColumns = $primaryColumns[0];
+		$subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
+		$ownedClass = $key->getForeignEntityClass();
+		/* @var $ownedClass DBEntity */
+		$ownedClass::getAll($subSelector);
+		$ownedClass::loadForeign($subForeignArray, $subSelector);
 	}
 	
+	/**
+	 * 
+	 * @param DBForeignKey $key
+	 * @param mixed $selector
+	 * @param unknown $subForeignArray
+	 */
 	private static function _loadForeignData($key, $selector, $subForeignArray) {
-		
+		echo('loading foreign data for ' . $key->getName() . '<br>');
+		$primaryClass = $key->getPrimaryEntityClass();
+		$primaryColumns = $key->getPrimaryColumns();
+		$foreignColumns = $key->getForeignColumns();
+		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
+			(is_array($primaryColumns) && (count($primaryColumns) > 1)))
+			throw new Exception('cannot load owned data through multi-column foreign key - yet');
+		if (is_array($foreignColumns))
+			$foreignColumns = $foreignColumns[0];
+		if (is_array($primaryColumns))
+			$primaryColumns = $primaryColumns[0];
+		$subSelector = array($primaryColumns => new DBQuery($key->getForeignEntityClass(), $foreignColumns, $selector));
+		$ownedClass = $key->getPrimaryEntityClass();
+		/* @var $ownedClass DBEntity */
+		$ownedClass::getAll($subSelector);
+		$ownedClass::loadForeign($subForeignArray, $subSelector);
 	}
 	
 	public static function loadForeign($foreignArray, $selector = null) {
 		foreach ($foreignArray AS $key => $value) {
 			$subForeignArray = array();
-			if (is_array($value)) {
-				$subForeignArray = $value;
-			} else {
+			if (is_numeric($key)) {
 				$key = $value;
+			} else {
+				$subForeignArray = $value;
+				if (!is_array($subForeignArray))
+					$subForeignArray = array($subForeignArray);
 			}
 			if (isset(static::$_ownedData[$key])) {
-				static::_loadOwnedData($key, $selector, $subForeignArray);
+				static::_loadOwnedData(static::$_ownedData[$key], $selector, $subForeignArray);
 			}
 			else if (isset(static::$_foreignKeys[$key])) {
-				static::_loadForeignData($key, $selector, $subForeignArray);
+				static::_loadForeignData(static::$_foreignKeys[$key], $selector, $subForeignArray);
 			}
 			else {
 				throw new Exception('Foreign data undefined for key ' . $key);
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @param DBForeignKey $foreignKey
+	 */
+	private static function _registerForeignKey($foreignKey) {
+		echo('registering foreign key ' . $foreignKey->getName() . '<br>');
+		static::$_foreignKeys[$foreignKey->getName()] = $foreignKey;
+	}
+	
+	/**
+	 * 
+	 * @param DBForeignKey $foreignKey
+	 */
+	private static function _registerOwnedData($foreignKey) {
+		echo('registering owned data for key ' . $foreignKey->getName() . '<br>');
+		static::$_ownedData[$foreignKey->getName()] = $foreignKey;
+	}
+	
+	public static function declareForeignKey($name, $foreignColumns, $primaryClass, $owned = false) {
+		if (!$primaryClass::isValidIdCount($foreignColumns))
+			throw new Exception('Foreign column count invalid for primary class');
+		$primaryColumns = $primaryClass::getIdField();
+		$foreignClass = get_called_class();
+		if ($foreignClass == 'DBEntity')
+			throw new Exception('Cannot call declareForeignKey on DBEntity');
+		$foreignKey = new DBForeignKey($name, $primaryClass, $primaryColumns, $foreignClass, $foreignColumns);
+		
+		$foreignClass::_registerForeignKey($foreignKey);
+		if ($owned)
+			$primaryClass::_registerOwnedData($foreignKey);
 	}
 }

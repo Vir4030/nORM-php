@@ -1,5 +1,4 @@
 <?php
-use norm\DBForeignKey;
 class Animal extends DBEntity {
 	
 	protected static $_database = 'norm';

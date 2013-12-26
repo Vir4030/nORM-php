@@ -126,6 +126,9 @@ class DBStore {
 			 			}
 			 			$sql .= ')';
 			 		}
+			 		else if ($value instanceof DBQuery) {
+			 			$sql .= $sep . $key . ' In (' . $value->generateSQL($this->_connection) . ')';
+			 		}
 			 		else {
 			 			$sql .= $sep . $key . ' = ' . $this->_connection->quote($value);
 			 		}
