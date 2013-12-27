@@ -6,7 +6,7 @@ class Animal extends DBEntity {
 	protected static $_tableName = 'animal';
 	
 	public function getAnimalProperties() {
-		return $this->getOneToManyData('AnimalProperty', 'animal_id');
+		return $this->_getOwnedObjects('AnimalProperty', AnimalProperty::FK_ANIMAL_ANIMAL_ID);
 	}
 	
 	public function getName() {

@@ -247,10 +247,10 @@ class DBStore {
 		$this->_profileArray['query'] += round(microtime(true) * 1000);
 		
 		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
-		$rs = $this->createEntitiesFromResultset($rs, ($orderBy == null));
+		$entities = $this->createEntitiesFromResultset($rs, ($orderBy == null));
 		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
 		
-		return $rs;
+		return $entities;
 	}
 
 	/**

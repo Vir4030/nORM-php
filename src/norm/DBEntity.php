@@ -74,6 +74,15 @@ abstract class DBEntity {
 	private $_changedProperties = array();
 	
 	/**
+	 * This array contains a cache of DBEntity objects that are owned objects to this entity.  It is
+	 * an array of arrays.  The key for the first array is the name of the foreign key describing the
+	 * owning relationship. The key for the second array is the ID of the owned entity.
+	 * 
+	 * @var array[array[DBEntity]]
+	 */
+	private $_ownedObjectCache = array();
+	
+	/**
 	 * Class constructor creates a new DBEntity with the given properties.  The properties
 	 * array is copied by reference into the object for performance.  When this method is
 	 * called, be sure the array provided is not altered after it has been used in this
@@ -270,7 +279,14 @@ abstract class DBEntity {
 	 * Saves this object to the backing database.
 	 */
 	public function save() {
-		static::getStore()->save($this);
+		if (count($this->_changedProperties) > 0) {
+			static::getStore()->save($this);
+		}
+		foreach ($this->_ownedObjectCache AS $ownedObjectArray) {
+			foreach ($ownedObjectArray AS $ownedEntity) {
+				$ownedEntity->save();
+			}
+		}
 		$this->_wasLoadedFromDatabase = true;
 	}
 	
@@ -312,11 +328,48 @@ abstract class DBEntity {
 	/**
 	 * 
 	 * @param DBForeignKey $key
+	 * @param DBEntity $ownedObject
+	 */
+	private function _addOwnedObject($key, $ownedObject) {
+		$keyName = $key->getName();
+		if (!isset($this->_ownedObjectCache[$keyName])) {
+			$this->_ownedObjectCache[$keyName] = array();
+		}
+		$id = $ownedObject->getId();
+		if (is_array($id)) {
+			$this->_ownedObjectCache[$keyName][] = $ownedObject;
+		} else {
+			$this->_ownedObjectCache[$keyName][$ownedObject->getId()] = $ownedObject;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param DBForeignKey $key
+	 */
+	protected function _getOwnedObjects($ownedClass, $keyName) {
+		$key = $ownedClass::_getForeignKey($keyName);
+		$retVal = array();
+		if (!isset($this->_ownedObjectCache[$keyName])) {
+			$primaryColumns = $key->getPrimaryColumns();
+			if (is_array($primaryColumns) && (count($primaryColumns) > 1))
+				throw new Exception('cannot load owned data through multi-column foreign key - yet');
+			if (is_array($primaryColumns))
+				$primaryColumns = $primaryColumns[0];
+			$selector = array($primaryColumns => $this->$primaryColumns);
+			static::_loadOwnedData($key, $selector);
+		}
+		$retVal = $this->_ownedObjectCache[$keyName];
+		return $retVal;
+	}
+	
+	/**
+	 * 
+	 * @param DBForeignKey $key
 	 * @param mixed $selector
 	 * @param unknown $subForeignArray
 	 */
-	private static function _loadOwnedData($key, $selector, $subForeignArray) {
-		echo('loading owned data for ' . $key->getName() . '<br>');
+	private static function _loadOwnedData($key, $selector, $subForeignArray = array()) {
 		$foreignColumns = $key->getForeignColumns();
 		$primaryColumns = $key->getPrimaryColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
@@ -329,8 +382,17 @@ abstract class DBEntity {
 		$subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
 		$ownedClass = $key->getForeignEntityClass();
 		/* @var $ownedClass DBEntity */
-		$ownedClass::getAll($subSelector);
-		$ownedClass::loadForeign($subForeignArray, $subSelector);
+		$ownedData = $ownedClass::getAll($subSelector);
+		if (count($subForeignArray) > 0) {
+			$ownedClass::loadForeign($subForeignArray, $subSelector);
+		}
+		/* @var $ownedObject DBEntity */
+		foreach ($ownedData AS $ownedObject) {
+			$parentObject = static::get($ownedObject->$foreignColumns);
+			if ($parentObject) {
+				$parentObject->_addOwnedObject($key, $ownedObject);
+			}
+		}
 	}
 	
 	/**
@@ -340,7 +402,6 @@ abstract class DBEntity {
 	 * @param unknown $subForeignArray
 	 */
 	private static function _loadForeignData($key, $selector, $subForeignArray) {
-		echo('loading foreign data for ' . $key->getName() . '<br>');
 		$primaryClass = $key->getPrimaryEntityClass();
 		$primaryColumns = $key->getPrimaryColumns();
 		$foreignColumns = $key->getForeignColumns();
@@ -385,8 +446,11 @@ abstract class DBEntity {
 	 * @param DBForeignKey $foreignKey
 	 */
 	private static function _registerForeignKey($foreignKey) {
-		echo('registering foreign key ' . $foreignKey->getName() . '<br>');
 		static::$_foreignKeys[$foreignKey->getName()] = $foreignKey;
+	}
+	
+	private static function _getForeignKey($keyName) {
+		return static::$_foreignKeys[$keyName];
 	}
 	
 	/**
@@ -394,7 +458,6 @@ abstract class DBEntity {
 	 * @param DBForeignKey $foreignKey
 	 */
 	private static function _registerOwnedData($foreignKey) {
-		echo('registering owned data for key ' . $foreignKey->getName() . '<br>');
 		static::$_ownedData[$foreignKey->getName()] = $foreignKey;
 	}
 	
