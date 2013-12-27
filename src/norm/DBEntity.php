@@ -351,13 +351,17 @@ abstract class DBEntity {
 		$key = $ownedClass::_getForeignKey($keyName);
 		$retVal = array();
 		if (!isset($this->_ownedObjectCache[$keyName])) {
+			$foreignColumns = $key->getForeignColumns();
 			$primaryColumns = $key->getPrimaryColumns();
-			if (is_array($primaryColumns) && (count($primaryColumns) > 1))
+			if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
+				(is_array($primaryColumns) && (count($primaryColumns) > 1)))
 				throw new Exception('cannot load owned data through multi-column foreign key - yet');
+			if (is_array($foreignColumns))
+				$foreignColumns = $foreignColumns[0];
 			if (is_array($primaryColumns))
 				$primaryColumns = $primaryColumns[0];
-			$selector = array($primaryColumns => $this->$primaryColumns);
-			static::_loadOwnedData($key, $selector);
+			$selector = array($foreignColumns => $this->$primaryColumns);
+			$this->_ownedObjectCache[$keyName] = $ownedClass::getAll($selector);
 		}
 		$retVal = $this->_ownedObjectCache[$keyName];
 		return $retVal;
