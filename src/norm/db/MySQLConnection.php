@@ -111,12 +111,7 @@ class MySQLConnection extends DBConnection {
 	
 	public function quote($unsafeValue) {
 		$safeValue = mysqli_real_escape_string($this->_db, $unsafeValue);
-		if (is_numeric($safeValue)) {
-			$safeValue = sprintf('%d', $safeValue);
-		}
-		else {
-			$safeValue = "'" . $safeValue . "'";
-		}
+		$safeValue = "'" . $safeValue . "'";
 		return $safeValue;
 	}
 }

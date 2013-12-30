@@ -90,7 +90,7 @@ abstract class DBEntity {
 	 * 
 	 * @param array[mixed] $properties
 	 */
-	public function __construct(array $properties) {
+	public function __construct(array $properties = array()) {
 		$this->_properties = $properties;
 	}
 	
@@ -101,8 +101,13 @@ abstract class DBEntity {
 	 * @return mixed the value of the field
 	 */
 	public function __get($field) {
-		return isset($this->_changedProperties[$field]) ? $this->_changedProperties[$field] :
-			isset($this->_properties[$field]) ? $this->_properties[$field] : null;
+		if (isset($this->_changedProperties[$field])) {
+			return $this->_changedProperties[$field];
+		}
+		if (isset($this->_properties[$field])) {
+			return $this->_properties[$field];
+		}
+		return null;
 	}
 	
 	/**
