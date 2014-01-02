@@ -95,6 +95,25 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Creates a new Entity, without an ID value, which is completely dirty.  Please keep in mind that
+	 * this does nothing to cleanse the data.  Bit values and dates should probably not be assigned here.
+	 * Otherwise, this will set any values to defaults before applying the array.
+	 * 
+	 * @param array $properties
+	 *  the properties to initially assign
+	 */
+	public static function create(array $properties = array()) {
+		$class = get_called_class();
+		/* @var $entity DBEntity */
+		$entity = new $class();
+		$entity->_setDefaultValues();
+		foreach ($properties AS $key => $value) {
+			$entity->$key = $value;
+		}
+		return $entity;
+	}
+	
+	/**
 	 * Gets the value for the field with the given name.
 	 * 
 	 * @param string $field the name of the field
@@ -118,9 +137,9 @@ abstract class DBEntity {
 	 */
 	public function __set($field, $value) {
 		if (isset($this->_changedProperties[$field]) && isset($this->_properties[$field]) &&
-			($value == $this->_properties[$field])) {
+			($value === $this->_properties[$field])) {
 			unset($this->_changedProperties[$field]);
-		} else {
+		} else if (!isset($this->_changedProperties[$field]) || ($value !== $this->_changedProperties[$field])) {
 			$this->_changedProperties[$field] = $value;
 		}
 	}
@@ -286,9 +305,18 @@ abstract class DBEntity {
 	public function save() {
 		if (count($this->_changedProperties) > 0) {
 			static::getStore()->save($this);
+			foreach ($this->_changedProperties AS $key => $value)
+				$this->_properties[$key] = $value;
+			$this->_changedProperties = array();
 		}
-		foreach ($this->_ownedObjectCache AS $ownedObjectArray) {
+		foreach ($this->_ownedObjectCache AS $keyName => $ownedObjectArray) {
+			/* @var $key DBForeignKey */
+			$key = DBForeignKey::get($keyName);
+			$foreignColumn = $key->getForeignColumns();
+			if (is_array($foreignColumn))
+				error_log('warning: will not save multiple column key '.$keyName.'\n');
 			foreach ($ownedObjectArray AS $ownedEntity) {
+				$ownedEntity->__set($foreignColumn, $this->getId());
 				$ownedEntity->save();
 			}
 		}
@@ -333,18 +361,18 @@ abstract class DBEntity {
 	/**
 	 * 
 	 * @param DBForeignKey $key
-	 * @param DBEntity $ownedObject
+	 * @param DBEntity $ownedInstance
 	 */
-	private function _addOwnedObject($key, $ownedObject) {
-		$keyName = $key->getName();
+	protected function _addOwnedInstance($keyName, $ownedInstance) {
+		$key = DBForeignKey::get($keyName);
 		if (!isset($this->_ownedObjectCache[$keyName])) {
 			$this->_ownedObjectCache[$keyName] = array();
 		}
-		$id = $ownedObject->getId();
-		if (is_array($id)) {
-			$this->_ownedObjectCache[$keyName][] = $ownedObject;
+		$id = $ownedInstance->getId();
+		if (is_array($id) || !$ownedInstance->getId()) {
+			$this->_ownedObjectCache[$keyName][] = $ownedInstance;
 		} else {
-			$this->_ownedObjectCache[$keyName][$ownedObject->getId()] = $ownedObject;
+			$this->_ownedObjectCache[$keyName][$ownedInstance->getId()] = $ownedInstance;
 		}
 	}
 	
@@ -352,8 +380,8 @@ abstract class DBEntity {
 	 * 
 	 * @param DBForeignKey $key
 	 */
-	protected function _getOwnedObjects($ownedClass, $keyName) {
-		$key = $ownedClass::_getForeignKey($keyName);
+	protected function _getOwnedInstances($keyName) {
+		$key = DBForeignKey::get($keyName);
 		$retVal = array();
 		if (!isset($this->_ownedObjectCache[$keyName])) {
 			$foreignColumns = $key->getForeignColumns();
@@ -366,9 +394,10 @@ abstract class DBEntity {
 			if (is_array($primaryColumns))
 				$primaryColumns = $primaryColumns[0];
 			$selector = array($foreignColumns => $this->$primaryColumns);
-			$this->_ownedObjectCache[$keyName] = $ownedClass::getAll($selector);
+			$foreignClass = $key->getForeignEntityClass();
+			$this->_ownedObjectCache[$keyName] = $foreignClass::getAll($selector);
 		}
-		$retVal = $this->_ownedObjectCache[$keyName];
+		$retVal = $this->_ownedObjectCache[$key->getName()];
 		return $retVal;
 	}
 	
@@ -429,6 +458,8 @@ abstract class DBEntity {
 	}
 	
 	public static function loadForeign($foreignArray, $selector = null) {
+		if (!is_array($foreignArray))
+			$foreignArray = array($foreignArray);
 		foreach ($foreignArray AS $key => $value) {
 			$subForeignArray = array();
 			if (is_numeric($key)) {

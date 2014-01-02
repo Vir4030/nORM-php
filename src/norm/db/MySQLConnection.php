@@ -74,15 +74,15 @@ class MySQLConnection extends DBConnection {
 	 */
 	public function insert($tableName, $fields) {
 		$sqlFields = 'INSERT INTO ' . $tableName . '(';
-				$sqlValues = ') VALUES (';
-				$count = 0;
+		$sqlValues = ') VALUES (';
+		$count = 0;
 		foreach ($fields AS $key => $value) {
 			if ($count++) {
-			$sqlFields .= ',';
+				$sqlFields .= ',';
 				$sqlValues .= ',';
-		}
-		$sqlFields .= $key;
-		$sqlValues .= $this->quote($value);
+			}
+			$sqlFields .= $key;
+			$sqlValues .= $this->quote($value);
 		}
 		$sql = $sqlFields . $sqlValues . ');';
 		
@@ -112,6 +112,10 @@ class MySQLConnection extends DBConnection {
 	public function quote($unsafeValue) {
 		$safeValue = mysqli_real_escape_string($this->_db, $unsafeValue);
 		$safeValue = "'" . $safeValue . "'";
+		if ($safeValue == "'0'")
+			$safeValue = 0;
+		if ($safeValue == "'1'")
+			$safeValue = 1;
 		return $safeValue;
 	}
 }

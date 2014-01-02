@@ -216,6 +216,8 @@ class DBStore {
 		}
 		$rs = $this->queryPrimitive($selector);
 		$entities = $this->createEntitiesFromResultset($rs);
+		if (count($entities) == 0)
+			return null;
 		if (count($entities) > 1) {
 			throw new Exception('get returned more than one record');
 		}

@@ -12,12 +12,21 @@ class DBForeignKey {
 	
 	private $_foreignColumns;
 	
+	private static $_keyCache = array();
+	
+	public static function get($keyName) {
+		if (!isset(static::$_keyCache[$keyName]))
+			throw new Exception('Foreign Key '.$keyName.' was not declared.');
+		return static::$_keyCache[$keyName];
+	}
+	
 	public function __construct($name, $primaryEntityClass, $primaryColumns, $foreignEntityClass, $foreignColumns) {
 		$this->_name = $name;
 		$this->_primaryEntityClass = $primaryEntityClass;
 		$this->_primaryColumns = $primaryColumns;
 		$this->_foreignEntityClass = $foreignEntityClass;
 		$this->_foreignColumns = $foreignColumns;
+		static::$_keyCache[$name] = $this;
 	}
 	
 	public function getName() {
