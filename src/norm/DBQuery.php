@@ -55,6 +55,26 @@ class DBQuery {
 				if ($value instanceof DBQuery) {
 					$sql .= ' In (' . $value->generateSQL($conn) . ')';
 				}
+				else if (is_array($value)) {
+		 			if (isset($value['compare'])) {
+		 				$compare = $value['compare'];
+		 				$value = $value['value'];
+		 				
+		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value);
+		 			} else {
+			 			// array value means an 'in' clause
+			 			
+			 			$sql .= ' In (';
+			 			$count = 0;
+			 			foreach ($value AS $in_value) {
+			 				if ($count++) {
+			 					$sql .= ',';
+			 				}
+			 				$sql .= $conn->quote($in_value);
+			 			}
+			 			$sql .= ')';
+		 			}
+				}
 				else {
 					$sql .= ' = ' . $conn->quote($value);
 				}

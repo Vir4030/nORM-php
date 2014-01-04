@@ -15,6 +15,8 @@ class DBForeignKey {
 	private static $_keyCache = array();
 	
 	public static function get($keyName) {
+		if (is_array($keyName) || is_object($keyName))
+			throw new Exception('key name cannot be an array or object');
 		if (!isset(static::$_keyCache[$keyName]))
 			throw new Exception('Foreign Key '.$keyName.' was not declared.');
 		return static::$_keyCache[$keyName];

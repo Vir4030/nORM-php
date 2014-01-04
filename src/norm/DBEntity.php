@@ -428,7 +428,7 @@ abstract class DBEntity {
 		foreach ($ownedData AS $ownedObject) {
 			$parentObject = static::get($ownedObject->$foreignColumns);
 			if ($parentObject) {
-				$parentObject->_addOwnedObject($key, $ownedObject);
+				$parentObject->_addOwnedInstance($key->getName(), $ownedObject);
 			}
 		}
 	}

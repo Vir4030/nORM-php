@@ -114,17 +114,24 @@ class DBStore {
 			 if (is_array($selector)) {
 			 	foreach ($selector as $key => $value) {
 			 		if (is_array($value)) {
-			 			// array value means an 'in' clause
-			 			
-			 			$sql .= $sep . $key . ' In (';
-			 			$count = 0;
-			 			foreach ($value AS $in_value) {
-			 				if ($count++) {
-			 					$sql .= ',';
-			 				}
-			 				$sql .= $this->_connection->quote($in_value);
+			 			if (isset($value['compare'])) {
+			 				$compare = $value['compare'];
+			 				$value = $value['value'];
+			 				
+			 				$sql .= $sep . $key . ' ' . $compare . ' ' . $this->_connection->quote($value);
+			 			} else {
+				 			// array value means an 'in' clause
+				 			
+				 			$sql .= $sep . $key . ' In (';
+				 			$count = 0;
+				 			foreach ($value AS $in_value) {
+				 				if ($count++) {
+				 					$sql .= ',';
+				 				}
+				 				$sql .= $this->_connection->quote($in_value);
+				 			}
+				 			$sql .= ')';
 			 			}
-			 			$sql .= ')';
 			 		}
 			 		else if ($value instanceof DBQuery) {
 			 			$sql .= $sep . $key . ' In (' . $value->generateSQL($this->_connection) . ')';

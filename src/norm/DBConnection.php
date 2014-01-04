@@ -310,4 +310,16 @@ abstract class DBConnection {
 	protected function logQueryError($message) {
 		$this->_currentQueryLog->error($message);
 	}
+	
+	public function dumpQueryLog($html = false) {
+		$br = $html ? '<br>' : "\n";
+		echo($br . '== Query Log ==' . $br);
+		foreach ($this->getQueryLog() AS $queryLog) {
+			if ($queryLog->isCompleted())
+				echo($queryLog->getQueryString() . $br . ' - completed in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms');
+			else
+				echo($queryLog->getQueryString() . $br . ' - error: ' . $queryLog->getErrorMessage());
+			echo($br);
+		}
+	}
 }

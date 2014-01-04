@@ -110,6 +110,8 @@ class MySQLConnection extends DBConnection {
 	}
 	
 	public function quote($unsafeValue) {
+		if (is_array($unsafeValue))
+			throw new Exception('cannot quote an array');
 		$safeValue = mysqli_real_escape_string($this->_db, $unsafeValue);
 		$safeValue = "'" . $safeValue . "'";
 		if ($safeValue == "'0'")
