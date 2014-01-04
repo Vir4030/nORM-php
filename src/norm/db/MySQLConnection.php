@@ -33,25 +33,26 @@ class MySQLConnection extends DBConnection {
 	/**
 	 * Updates data in the given table to set the dirty properties for the record specified by the ID array.
 	 *
-	 * @param string       $tableName the name of the table being updated
+	 * @param string       $class     the class being updated
 	 * @param array[mixed] $fields    a key-value array of fields and values
 	 * @param array[mixed] $idArray   always an array, even if there is only one ID value - this becomes a where clause
 	 * @return int the number of rows affected
 	 */
-	public function update($tableName, $fields, $idArray) {
+	public function update($class, $fields, $idArray) {
+		$tableName = $class::getTableName();
 		$sql = 'UPDATE ' . $tableName . ' SET ';
 		$count = 0;
 		foreach ($fields AS $key => $value) {
 			if ($count++)
 				$sql .= ',';
-				$sql .= $key . ' = ' . $this->quote($value);
+				$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ' WHERE ';
 		$count = 0;
 		foreach ($idArray AS $key => $value) {
 		if ($count++)
 			$sql .= ' AND ';
-			$sql .= $key . ' = ' . $this->quote($value);
+			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
 		$this->logQueryBegin($sql);
@@ -67,12 +68,13 @@ class MySQLConnection extends DBConnection {
 	/**
 	 * Inserts data into the table as a new record.
 	 *
-	 * @param string       $tableName the name of the table being inserted into
+	 * @param string       $class     the class being updated
 	 * @param array[mixed] $fields    a key-value array of fields and values
 	 * @return int|true the auto-increment ID, if existing, otherwise a true, indicating success
 	 * @throws Exception when the SQL causes an exception
 	 */
-	public function insert($tableName, $fields) {
+	public function insert($class, $fields) {
+		$tableName = $class::getTableName();
 		$sqlFields = 'INSERT INTO ' . $tableName . '(';
 		$sqlValues = ') VALUES (';
 		$count = 0;
@@ -82,7 +84,7 @@ class MySQLConnection extends DBConnection {
 				$sqlValues .= ',';
 			}
 			$sqlFields .= $key;
-			$sqlValues .= $this->quote($value);
+			$sqlValues .= $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql = $sqlFields . $sqlValues . ');';
 		
@@ -109,15 +111,12 @@ class MySQLConnection extends DBConnection {
 		$this->logQueryEnd();
 	}
 	
-	public function quote($unsafeValue) {
+	public function quote($unsafeValue, $requiresQuoting = true) {
 		if (is_array($unsafeValue))
 			throw new Exception('cannot quote an array');
-		$safeValue = mysqli_real_escape_string($this->_db, $unsafeValue);
-		$safeValue = "'" . $safeValue . "'";
-		if ($safeValue == "'0'")
-			$safeValue = 0;
-		if ($safeValue == "'1'")
-			$safeValue = 1;
+		$safeValue = mysqli_real_escape_string($this->_db, ''.$unsafeValue);
+		if ($requiresQuoting)
+			$safeValue = "'" . $safeValue . "'";
 		return $safeValue;
 	}
 }

@@ -118,7 +118,7 @@ class DBStore {
 			 				$compare = $value['compare'];
 			 				$value = $value['value'];
 			 				
-			 				$sql .= $sep . $key . ' ' . $compare . ' ' . $this->_connection->quote($value);
+			 				$sql .= $sep . $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
 			 			} else {
 				 			// array value means an 'in' clause
 				 			
@@ -128,7 +128,7 @@ class DBStore {
 				 				if ($count++) {
 				 					$sql .= ',';
 				 				}
-				 				$sql .= $this->_connection->quote($in_value);
+				 				$sql .= $this->_connection->quote($in_value, $class::requiresQuoting($key));
 				 			}
 				 			$sql .= ')';
 			 			}
@@ -137,7 +137,7 @@ class DBStore {
 			 			$sql .= $sep . $key . ' In (' . $value->generateSQL($this->_connection) . ')';
 			 		}
 			 		else {
-			 			$sql .= $sep . $key . ' = ' . $this->_connection->quote($value);
+			 			$sql .= $sep . $key . ' = ' . $this->_connection->quote($value, $class::requiresQuoting($key));
 			 		}
 			 		$sep = ' AND ';
 			 	}
@@ -146,7 +146,7 @@ class DBStore {
 			 	if (is_array($class::getIdField())) {
 			 		throw new Exception('key with multiple fields requires array-based selector');
 			 	}
-			 	$sql .= $sep . $class::getIdField() . ' = ' . $this->_connection->quote($selector);
+			 	$sql .= $sep . $class::getIdField() . ' = ' . $this->_connection->quote($selector, $class::requiresQuoting($class::getIdField()));
 			}
 		}
 		if (!is_null($orderBy)) {
@@ -215,9 +215,6 @@ class DBStore {
 	 */
 	public function get($selector) {
 		$class = $this->_class;
-		if (($selector == $class::getIdField())) {
-			echo('key grab<br>');
-		}
 		if (!is_array($selector) && isset($this->_cachedEntities[$selector])) {
 			return $this->_cachedEntities[$selector];
 		}
@@ -289,7 +286,7 @@ class DBStore {
 			$idArray = array($entity::getIdField() => $idArray);
 
 		// $idArray should now be key-value pair for ID fields
-		$rowsAffected = $this->_connection->update($entity::getTableName(), $entity->getDirtyProperties(), $idArray);
+		$rowsAffected = $this->_connection->update($class, $entity->getDirtyProperties(), $idArray);
 		if ($rowsAffected > 1)
 			throw new Exception('multiple rows have been affected in entity update for ID ' . $entity->getGlobalUniqueIdentifier());
 		return ($rowsAffected == 1);
@@ -307,7 +304,7 @@ class DBStore {
 		if ($entity->getLocalUniqueIdentifier())
 			throw new Exception("cannot insert entity which already has ID value");
 		
-		$id = $this->_connection->insert($entity::getTableName(), $entity->getDirtyProperties());
+		$id = $this->_connection->insert($class, $entity->getDirtyProperties());
 		if ($id && ($id !== TRUE)) {
 			$entity->setId($id);
 		}

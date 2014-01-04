@@ -44,6 +44,7 @@ class DBQuery {
 	 * @return string
 	 */
 	private function _generateWhere($conn) {
+		$class = $this->_entityClass;
 		$sql  = '';
 		if (is_array($this->_selector)) {
 			$count = 0;
@@ -60,7 +61,7 @@ class DBQuery {
 		 				$compare = $value['compare'];
 		 				$value = $value['value'];
 		 				
-		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value);
+		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
 		 			} else {
 			 			// array value means an 'in' clause
 			 			
@@ -70,18 +71,18 @@ class DBQuery {
 			 				if ($count++) {
 			 					$sql .= ',';
 			 				}
-			 				$sql .= $conn->quote($in_value);
+			 				$sql .= $conn->quote($in_value, $class::requiresQuoting($key));
 			 			}
 			 			$sql .= ')';
 		 			}
 				}
 				else {
-					$sql .= ' = ' . $conn->quote($value);
+					$sql .= ' = ' . $conn->quote($value, $class::requiresQuoting($key));
 				}
 			}
 		} else {
-			$class = $this->_entityClass;
 			$key = $class::getIdField();
+			$sql .= $key . ' = ' . $conn->quote($value, $class::requiresQuoting($key));
 		}
 		return $sql;
 	}

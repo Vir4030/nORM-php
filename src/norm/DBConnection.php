@@ -175,21 +175,21 @@ abstract class DBConnection {
 	/**
 	 * Updates data in the given table to set the dirty properties for the record specified by the ID array.
 	 * 
-	 * @param string       $tableName the name of the table being updated
+	 * @param string       $class     the class being updated
 	 * @param array[mixed] $fields    a key-value array of fields and values
 	 * @param array[mixed] $idArray   always an array, even if there is only one ID value - this becomes a where clause
 	 * @return int the number of rows affected
 	 */
-	public abstract function update($tableName, $fields, $idArray);
+	public abstract function update($class, $fields, $idArray);
 	
 	/**
 	 * Inserts data into the table as a new record.
 	 * 
-	 * @param string       $tableName the name of the table being inserted into
+	 * @param string       $class     the class being updated
 	 * @param array[mixed] $fields    a key-value array of fields and values
 	 * @return int|boolean the auto-increment ID, if existing, otherwise a boolean indicating success
 	 */
-	public abstract function insert($tableName, $fields);
+	public abstract function insert($class, $fields);
 	
 	/**
 	 * Fetches an associative key-value array for the next record in the resultset.
@@ -221,7 +221,7 @@ abstract class DBConnection {
 	 * @return string
 	 *  the safe, quoted value, ready for use in an SQL statement
 	 */
-	public abstract function quote($unsafeValue);
+	public abstract function quote($unsafeValue, $requiresQuoting = true);
 	
 	/*******************************************************************************
 	 * GETTERS

@@ -59,6 +59,15 @@ abstract class DBEntity {
 	protected static $_foreignKeys = array();
 	
 	/**
+	 * An array of fields, as defined by the subclass.  Fields do not need to be declared in this
+	 * array, however, doing so will enable helper functionality throughout the DB library.
+	 * This array is filled through calls to static::declareField.
+	 * 
+	 * @var array[DBField]
+	 */
+	protected static $_fields = array();
+	
+	/**
 	 * This properties array holds the raw record data straight from the database.
 	 * 
 	 * @var array[mixed]
@@ -120,13 +129,15 @@ abstract class DBEntity {
 	 * @return mixed the value of the field
 	 */
 	public function __get($field) {
-		if (isset($this->_changedProperties[$field])) {
-			return $this->_changedProperties[$field];
+		$value = null;
+		if (isset($this->_changedProperties[$field]))
+			$value = $this->_changedProperties[$field];
+		else if (isset($this->_properties[$field]))
+			$value = $this->_properties[$field];
+		if (isset(static::$_fields[$field])) {
+			$value = static::$_fields[$field]->convertFromDatabase($value);
 		}
-		if (isset($this->_properties[$field])) {
-			return $this->_properties[$field];
-		}
-		return null;
+		return $value;
 	}
 	
 	/**
@@ -136,9 +147,11 @@ abstract class DBEntity {
 	 * @param mixed  $value the value of the field
 	 */
 	public function __set($field, $value) {
-		if (isset($this->_changedProperties[$field]) && isset($this->_properties[$field]) &&
-			($value === $this->_properties[$field])) {
-			unset($this->_changedProperties[$field]);
+		if (isset(static::$_fields[$field]))
+			$value = static::$_fields[$field]->convertToDatabase($value);
+		if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
+			if (isset($this->_changedProperties[$field]))
+				unset($this->_changedProperties[$field]);
 		} else if (!isset($this->_changedProperties[$field]) || ($value !== $this->_changedProperties[$field])) {
 			$this->_changedProperties[$field] = $value;
 		}
@@ -149,6 +162,13 @@ abstract class DBEntity {
 	 */
 	protected function _setDefaultValues() {
 		
+	}
+	
+	public static function requiresQuoting($field) {
+		$value = true;
+		if (isset(static::$_fields[$field]))
+			$value = static::$_fields[$field]->requiresQuoting();
+		return $value;
 	}
 	
 	/**
@@ -513,5 +533,9 @@ abstract class DBEntity {
 		$foreignClass::_registerForeignKey($foreignKey);
 		if ($owned)
 			$primaryClass::_registerOwnedData($foreignKey);
+	}
+	
+	public static function declareField($name, $field) {
+		static::$_fields[$name] = $field;
 	}
 }
