@@ -21,11 +21,13 @@ class MySQLConnection extends DBConnection {
 	
 	public function query($sql) {
 		$this->logQueryBegin($sql);
+		/* @var $rs mysqli_result */
 		if (($rs = mysqli_query($this->_db, $sql)) === false) {
 			$message = mysqli_error($this->_db) . ': ' . $sql;
 			$this->logQueryError($message);
 			throw new Exception($message);
 		}
+		$this->logQueryRows($rs->num_rows);
 		$this->logQuerySplit();
 		return $rs;
 	}
@@ -61,8 +63,10 @@ class MySQLConnection extends DBConnection {
 			$this->logQueryError($message);
 			throw new Exception($message . ': ' . $sql);
 		}
+		$rows = mysqli_affected_rows($this->_db);
+		$this->logQueryRows($rows);
 		$this->logQueryEnd();
-		return mysqli_affected_rows($this->_db);
+		return $rows;
 	}
 	
 	/**
@@ -94,11 +98,13 @@ class MySQLConnection extends DBConnection {
 			$this->logQueryError($message);
 			throw new Exception($message);
 		}
-		$this->logQueryEnd();
-		
+		$rows = mysqli_affected_rows($this->_db);
+		$this->logQueryRows($rows);
 		$id = mysqli_insert_id($this->_db);
 		if (!$id)
 			$id = true;
+		$this->logQueryEnd();
+		
 		return $id;
 	}
 	

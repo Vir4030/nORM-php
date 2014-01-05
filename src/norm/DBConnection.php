@@ -303,6 +303,10 @@ abstract class DBConnection {
 		$this->_currentQueryLog->split();
 	}
 	
+	protected function logQueryRows($rows) {
+		$this->_currentQueryLog->setRowsAffected($rows);
+	}
+	
 	protected function logQueryEnd() {
 		$this->_currentQueryLog->end();
 	}
@@ -315,9 +319,9 @@ abstract class DBConnection {
 		$br = $html ? '<br>' : "\n";
 		echo($br . '== Query Log ==' . $br);
 		foreach ($this->getQueryLog() AS $queryLog) {
-			if ($queryLog->isCompleted())
-				echo($queryLog->getQueryString() . $br . ' - completed in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms');
-			else
+			if ($queryLog->isCompleted()) {
+				echo($queryLog->getQueryString() . $br . ' - ' . $queryLog->getRowsAffected() . ' rows affected in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms');
+			} else
 				echo($queryLog->getQueryString() . $br . ' - error: ' . $queryLog->getErrorMessage());
 			echo($br);
 		}
