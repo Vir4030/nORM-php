@@ -378,6 +378,12 @@ abstract class DBEntity {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
 	}
 	
+	protected function _setupOwnedInstanceCache($keyName) {
+		if (!isset($this->_ownedObjectCache[$keyName])) {
+			$this->_ownedObjectCache[$keyName] = array();
+		}
+	}
+	
 	/**
 	 * 
 	 * @param DBForeignKey $key
@@ -385,9 +391,7 @@ abstract class DBEntity {
 	 */
 	protected function _addOwnedInstance($keyName, $ownedInstance) {
 		$key = DBForeignKey::get($keyName);
-		if (!isset($this->_ownedObjectCache[$keyName])) {
-			$this->_ownedObjectCache[$keyName] = array();
-		}
+		$this->_setupOwnedInstanceCache($keyName);
 		$id = $ownedInstance->getId();
 		if (is_array($id) || !$ownedInstance->getId()) {
 			$this->_ownedObjectCache[$keyName][] = $ownedInstance;
@@ -428,6 +432,7 @@ abstract class DBEntity {
 	 * @param unknown $subForeignArray
 	 */
 	private static function _loadOwnedData($key, $selector, $subForeignArray = array()) {
+		echo("loading owned data " . $key->getName() . " from class " . get_called_class() . "...<br>");
 		$foreignColumns = $key->getForeignColumns();
 		$primaryColumns = $key->getPrimaryColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
@@ -480,23 +485,24 @@ abstract class DBEntity {
 	public static function loadForeign($foreignArray, $selector = null) {
 		if (!is_array($foreignArray))
 			$foreignArray = array($foreignArray);
-		foreach ($foreignArray AS $key => $value) {
+		foreach ($foreignArray AS $keyName => $value) {
 			$subForeignArray = array();
-			if (is_numeric($key)) {
-				$key = $value;
+			if (is_numeric($keyName)) {
+				$keyName = $value;
 			} else {
 				$subForeignArray = $value;
 				if (!is_array($subForeignArray))
 					$subForeignArray = array($subForeignArray);
 			}
-			if (isset(static::$_ownedData[$key])) {
-				static::_loadOwnedData(static::$_ownedData[$key], $selector, $subForeignArray);
+			$key = DBForeignKey::get($keyName);
+			if (get_called_class() == $key->getPrimaryEntityClass()) {
+				static::_loadOwnedData(static::$_ownedData[$keyName], $selector, $subForeignArray);
 			}
-			else if (isset(static::$_foreignKeys[$key])) {
-				static::_loadForeignData(static::$_foreignKeys[$key], $selector, $subForeignArray);
+			else if (get_called_class() == $key->getForeignEntityClass()) {
+				static::_loadForeignData(static::$_foreignKeys[$keyName], $selector, $subForeignArray);
 			}
 			else {
-				throw new Exception('Foreign data undefined for key ' . $key);
+				throw new Exception('Foreign data undefined for key ' . $keyName . ' and class ' . get_called_class());
 			}
 		}
 	}
