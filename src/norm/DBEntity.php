@@ -92,6 +92,15 @@ abstract class DBEntity {
 	private $_ownedObjectCache = array();
 	
 	/**
+	 * True if marked for deletion.  This allows sub-objects to be deleted without deleting the parent
+	 * object.
+	 * 
+	 * @var boolean
+	 *  true if marked for deletion
+	 */
+	private $_markedForDeletion = false;
+	
+	/**
 	 * Class constructor creates a new DBEntity with the given properties.  The properties
 	 * array is copied by reference into the object for performance.  When this method is
 	 * called, be sure the array provided is not altered after it has been used in this
@@ -201,6 +210,23 @@ abstract class DBEntity {
 	 */
 	public function getDirtyProperties() {
 		return $this->_changedProperties;
+	}
+	
+	/**
+	 * Marks this entity for deletion.
+	 */
+	public function markForDeletion() {
+		$this->_markedForDeletion = true;
+	}
+	
+	/**
+	 * Checks if this entity is marked for deletion.
+	 * 
+	 * @return boolean
+	 *  true if this entity is marked for deletion
+	 */
+	public function isMarkedForDeletion() {
+		return $this->_markedForDeletion;
 	}
 	
 	/**
@@ -319,6 +345,17 @@ abstract class DBEntity {
 		return get_class($this) . '-' . $this->getLocalUniqueIdentifier();
 	}
 	
+	public function delete() {
+		foreach ( $this->_ownedObjectCache as $keyName => $ownedObjectArray ) {
+			/* @var $ownedEntity DBEntity */
+			foreach ( $ownedObjectArray as $ownedEntity ) {
+				$ownedEntity->delete();
+			}
+		}
+		static::getStore()->delete($this);
+		return;
+	}
+	
 	/**
 	 * Saves this object to the backing database.
 	 */
@@ -335,9 +372,14 @@ abstract class DBEntity {
 			$foreignColumn = $key->getForeignColumns();
 			if (is_array($foreignColumn))
 				error_log('warning: will not save multiple column key '.$keyName.'\n');
-			foreach ($ownedObjectArray AS $ownedEntity) {
-				$ownedEntity->__set($foreignColumn, $this->getId());
-				$ownedEntity->save();
+			foreach ($ownedObjectArray AS $id => $ownedEntity) {
+				if ($ownedEntity->isMarkedForDeletion()) {
+					$ownedEntity->delete();
+					unset($ownedObjectArray[$id]);
+				} else {
+					$ownedEntity->__set($foreignColumn, $this->getId());
+					$ownedEntity->save();
+				}
 			}
 		}
 		$this->_wasLoadedFromDatabase = true;
@@ -432,7 +474,6 @@ abstract class DBEntity {
 	 * @param unknown $subForeignArray
 	 */
 	private static function _loadOwnedData($key, $selector, $subForeignArray = array()) {
-		echo("loading owned data " . $key->getName() . " from class " . get_called_class() . "...<br>");
 		$foreignColumns = $key->getForeignColumns();
 		$primaryColumns = $key->getPrimaryColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||

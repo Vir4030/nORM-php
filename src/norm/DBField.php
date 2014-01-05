@@ -82,4 +82,4 @@ class DBField {
 DBField::$TYPE_STRING = new DBField();
 DBField::$TYPE_NUMERIC = new DBField(false);
 DBField::$TYPE_DATETIME = new DBField(true, 'Y-m-d G:i:s');
-DBField::$TYPE_BIT = new DBField(false, null);
+DBField::$TYPE_BIT = new DBField(false, null, true);

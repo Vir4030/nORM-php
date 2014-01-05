@@ -192,6 +192,14 @@ abstract class DBConnection {
 	public abstract function insert($class, $fields);
 	
 	/**
+	 * Deletes data from the table.
+	 * 
+	 * @param string       $class    the class being deleted
+	 * @param array[mixed] $idArray  always an array ,even if there is only one ID value - this becomes a where clause
+	 */
+	public abstract function delete($class, $idArray);
+	
+	/**
 	 * Fetches an associative key-value array for the next record in the resultset.
 	 * If there isn't a next record, null is returned.
 	 * 

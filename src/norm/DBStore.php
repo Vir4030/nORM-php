@@ -309,4 +309,22 @@ class DBStore {
 			$entity->setId($id);
 		}
 	}
+	
+	/**
+	 * Deletes the entity, which must be already known in the database.
+	 * 
+	 * @param DBEntity $entity
+	 */
+	public function delete($entity) {
+		$class = $this->_class;
+		if (!$entity->getLocalUniqueIdentifier())
+			throw new Exception("cannot delete entity which doesn't have an ID value");
+		
+		$idArray = $entity->getId();
+		if (!is_array($idArray))
+			$idArray = array($entity::getIdField() => $idArray);
+		
+		unset($this->_cachedEntities[$entity->getLocalUniqueIdentifier()]);
+		$this->_connection->delete($class, $idArray);
+	}
 }

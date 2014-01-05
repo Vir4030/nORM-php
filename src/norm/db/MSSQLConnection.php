@@ -45,6 +45,31 @@ class MSSQLConnection extends DBConnection {
 	}
 	
 	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::delete()
+	 */
+	public function delete($class, $idArray) {
+		$tableName = $class::getTableName();
+		$sql = 'DELETE FROM ' . $tableName . ' WHERE ';
+		$count = 0;
+		foreach ($idArray AS $key => $value) {
+			if ($count++)
+				$sql .= ' AND ';
+			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
+		}
+		$sql .= ';';
+		$this->logQueryBegin($sql);
+		if (mssql_query($sql, $this->_db) === false) {
+			$message = mssql_get_last_message();
+			$this->logQueryError($message);
+			throw new Exception($message);
+		}
+		
+		$this->logQueryEnd();
+		return mssql_rows_affected($this->_db);
+	}
+	
+	/**
 	 * Updates data in the given table to set the dirty properties for the record specified by the ID array.
 	 * 
 	 * @param string       $class     the class being updated

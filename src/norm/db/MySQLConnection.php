@@ -33,6 +33,32 @@ class MySQLConnection extends DBConnection {
 	}
 
 	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::delete()
+	 */
+	public function delete($class, $idArray) {
+		$tableName = $class::getTableName();
+		$sql = 'DELETE FROM ' . $tableName . ' WHERE ';
+		$count = 0;
+		foreach ($idArray AS $key => $value) {
+			if ($count++)
+				$sql .= ' AND ';
+			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
+		}
+		$sql .= ';';
+		$this->logQueryBegin($sql);
+		if (!mysqli_query($this->_db, $sql)) {
+			$message = mysqli_error($this->_db);
+			$this->logQueryError($message);
+			throw new Exception($message . ': ' . $sql);
+		}
+		$rows = mysqli_affected_rows($this->_db);
+		$this->logQueryRows($rows);
+		$this->logQueryEnd();
+		return $rows;
+	}
+	
+	/**
 	 * Updates data in the given table to set the dirty properties for the record specified by the ID array.
 	 *
 	 * @param string       $class     the class being updated
@@ -47,13 +73,13 @@ class MySQLConnection extends DBConnection {
 		foreach ($fields AS $key => $value) {
 			if ($count++)
 				$sql .= ',';
-				$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
+			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ' WHERE ';
 		$count = 0;
 		foreach ($idArray AS $key => $value) {
-		if ($count++)
-			$sql .= ' AND ';
+			if ($count++)
+				$sql .= ' AND ';
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
