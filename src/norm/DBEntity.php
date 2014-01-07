@@ -106,6 +106,8 @@ abstract class DBEntity {
 	 * called, be sure the array provided is not altered after it has been used in this
 	 * constructor and stored in the object.
 	 * 
+	 * Scripts outside of the nORM library
+	 * 
 	 * @param array[mixed] $properties
 	 */
 	public function __construct(array $properties = array()) {
@@ -443,13 +445,17 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Gets all owned instances for the given owning foreign key relationship.
 	 * 
-	 * @param DBForeignKey $key
+	 * @param string $keyName
+	 *  foreign key name
 	 */
 	protected function _getOwnedInstances($keyName) {
 		$key = DBForeignKey::get($keyName);
 		$retVal = array();
+		
 		if (!isset($this->_ownedObjectCache[$keyName])) {
+			// TODO: move this foreign key logic into the store
 			$foreignColumns = $key->getForeignColumns();
 			$primaryColumns = $key->getPrimaryColumns();
 			if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
@@ -463,7 +469,56 @@ abstract class DBEntity {
 			$foreignClass = $key->getForeignEntityClass();
 			$this->_ownedObjectCache[$keyName] = $foreignClass::getAll($selector);
 		}
-		$retVal = $this->_ownedObjectCache[$key->getName()];
+		$retVal = $this->_ownedObjectCache[$keyName];
+		return $retVal;
+	}
+	
+	/**
+	 * Gets a singular owned instance for the given owning foreign key relationship,
+	 * according to the given selector.  This method searches the cache for a matching
+	 * entity.  Responsibility for indexing this search rests in the store.
+	 * 
+	 * @param string $keyName
+	 *  foreign key name
+	 */
+	protected function _getOwnedInstance($keyName, $selector) {
+		$key = DBForeignKey::get($keyName);
+		$retVal = null;
+		
+		if (!isset($this->_ownedObjectCache[$keyName])) {
+			$this->_ownedObjectCache[$keyName] = array();
+		}
+		
+		$count = 0;
+		foreach ($this->_ownedObjectCache[$keyName] AS $instance) {
+			foreach($selector AS $key => $value) {
+				if ($instance->$key != $value) {
+					break;
+				} 
+			}
+			$count++;
+			$retVal = $instance;
+		}
+		
+		if ($count > 1) {
+			throw new Exception('more than one instance was found matching the given selector');
+		}
+		
+		if (!$count) {
+			// TODO: move this foreign key logic into the store
+			$foreignColumns = $key->getForeignColumns();
+			$primaryColumns = $key->getPrimaryColumns();
+			if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
+			(is_array($primaryColumns) && (count($primaryColumns) > 1)))
+				throw new Exception('cannot load owned data through multi-column foreign key - yet');
+			if (is_array($foreignColumns))
+				$foreignColumns = $foreignColumns[0];
+			if (is_array($primaryColumns))
+				$primaryColumns = $primaryColumns[0];
+			$selector[$foreignColumns] = $this->$primaryColumns;
+			$foreignClass = $key->getForeignEntityClass();
+			$this->_ownedObjectCache[$keyName][] = $foreignClass::get($selector);
+		}
 		return $retVal;
 	}
 	
