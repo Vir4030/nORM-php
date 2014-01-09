@@ -11,6 +11,15 @@
  * These places may all have different caching rules for data, because they will be producers of
  * some data and consumers of others.
  * 
+ * When getting data without sorted results, all data is cached by id.  When data is then retrived
+ * one record at a time by id, it will be returned from cache and retrieved from the database only
+ * when necessary.  The _createEntitiesFromResultset() method will always check the cache for a
+ * matching object and throw out the one from the database if it's found.  By always using the cached
+ * object, it guarantees that a dirty read cannot be made from the database.
+ * 
+ * In the future, a search($selector) method will be made that will return only cache hits.  When index
+ * support is added, this method will search a cache that is kept by index, so it will be very fast.
+ * 
  * @author Erick
  */
 class DBStore {
@@ -172,6 +181,9 @@ class DBStore {
 	 * When there is a singular primary key column, that will be used as the key for this array.
 	 * Otherwise, it will just be a numerically-indexed array.
 	 * 
+	 * If any entities returned match an existing object in the cache, the object in the cache is
+	 * returned instead.
+	 * 
 	 * @param mixed $rs
 	 *  the implementation-specific resultset object, to be passed into the connection
 	 * @param boolean $indexed
@@ -188,6 +200,8 @@ class DBStore {
 		while (($row = $this->_connection->fetch_assoc($rs)) != null) {
 			$entity = new $class($row);
 			$idKey = $entity->getLocalUniqueIdentifier();
+			if (isset($this->_cachedEntities[$idKey]))
+				$entity = $this->_cachedEntities[$idKey];
 			if (!$idKey)
 				throw new Exception("entity does not have an id value - this should NEVER happen, since this data is being loaded from the database");
 			if ($indexed) {
