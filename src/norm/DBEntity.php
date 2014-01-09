@@ -359,6 +359,13 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Saves all cached entities of this class back into the database.
+	 */
+	public static function saveAll() {
+		static::getStore()->saveAll();
+	}
+	
+	/**
 	 * Saves this object to the backing database.
 	 */
 	public function save() {
@@ -493,34 +500,39 @@ abstract class DBEntity {
 			$this->_ownedObjectCache[$keyName] = array();
 		}
 		
+		// TODO: move this foreign key logic into the store
+		$foreignColumns = $key->getForeignColumns();
+		$primaryColumns = $key->getPrimaryColumns();
+		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
+		(is_array($primaryColumns) && (count($primaryColumns) > 1)))
+			throw new Exception('cannot load owned data through multi-column foreign key - yet');
+		if (is_array($foreignColumns))
+			$foreignColumns = $foreignColumns[0];
+		if (is_array($primaryColumns))
+			$primaryColumns = $primaryColumns[0];
+		$selector[$foreignColumns] = $this->$primaryColumns;
+		
 		// TODO: we should be more efficient than this, but so far we're not dealing with more than 20 rows max here
 		$count = 0;
 		foreach ($this->_ownedObjectCache[$keyName] AS $instance) {
+			$match = true;
 			foreach($selector AS $key => $value) {
 				if ($instance->$key != $value) {
+					$match = false;
 					break;
 				} 
 			}
-			$count++;
-			$retVal = $instance;
+			if ($match) {
+				$count++;
+				$retVal = $instance;
+			}
 		}
 		
 		if ($count > 1) {
 			throw new Exception('more than one instance was found matching the given selector');
 		}
 		
-		if (!$count) {
-			// TODO: move this foreign key logic into the store
-			$foreignColumns = $key->getForeignColumns();
-			$primaryColumns = $key->getPrimaryColumns();
-			if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
-			(is_array($primaryColumns) && (count($primaryColumns) > 1)))
-				throw new Exception('cannot load owned data through multi-column foreign key - yet');
-			if (is_array($foreignColumns))
-				$foreignColumns = $foreignColumns[0];
-			if (is_array($primaryColumns))
-				$primaryColumns = $primaryColumns[0];
-			$selector[$foreignColumns] = $this->$primaryColumns;
+		if (!$retVal) {
 			$foreignClass = $key->getForeignEntityClass();
 			$retVal = $foreignClass::get($selector);
 			if ($retVal)

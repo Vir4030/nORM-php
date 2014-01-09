@@ -274,6 +274,15 @@ class DBStore {
 	}
 
 	/**
+	 * Saves all of the cached entities back to the database.
+	 */
+	public function saveAll() {
+		foreach ($this->_cachedEntities AS $entity) {
+			$this->save($entity);
+		}
+	}
+	
+	/**
 	 * Saves the given entity back to the database.
 	 * 
 	 * @param DBEntity $entity
