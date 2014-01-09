@@ -393,7 +393,6 @@ abstract class DBEntity {
 				}
 			}
 		}
-		$this->_wasLoadedFromDatabase = true;
 	}
 	
 	public function getOneToManyData($class, $foreignField) {

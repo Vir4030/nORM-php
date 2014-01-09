@@ -198,12 +198,13 @@ class DBStore {
 		$entity = null;
 		$class = $this->_class;
 		while (($row = $this->_connection->fetch_assoc($rs)) != null) {
+			// TODO: don't instantiate the object when it's a cache hit
 			$entity = new $class($row);
 			$idKey = $entity->getLocalUniqueIdentifier();
+			if (!$idKey)
+				throw new Exception('id key is not properly configured for class ' . get_class($this));
 			if (isset($this->_cachedEntities[$idKey]))
 				$entity = $this->_cachedEntities[$idKey];
-			if (!$idKey)
-				throw new Exception("entity does not have an id value - this should NEVER happen, since this data is being loaded from the database");
 			if ($indexed) {
 				$entities[$idKey] = $entity;
 			} else {
@@ -278,7 +279,7 @@ class DBStore {
 	 */
 	public function saveAll() {
 		foreach ($this->_cachedEntities AS $entity) {
-			$this->save($entity);
+			$entity->save(); // seems awkward, but necessary to ensure foreign key values are always set, for example
 		}
 	}
 	
