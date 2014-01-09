@@ -375,6 +375,8 @@ abstract class DBEntity {
 			if (is_array($foreignColumn))
 				error_log('warning: will not save multiple column key '.$keyName.'\n');
 			foreach ($ownedObjectArray AS $id => $ownedEntity) {
+				if (!$ownedEntity)
+					throw new Exception('no owned entity for key "' . $keyName . '" and id ' . $id . ' (null in cache)');
 				if ($ownedEntity->isMarkedForDeletion()) {
 					$ownedEntity->delete();
 					unset($ownedObjectArray[$id]);
@@ -434,6 +436,8 @@ abstract class DBEntity {
 	 * @param DBEntity $ownedInstance
 	 */
 	protected function _addOwnedInstance($keyName, $ownedInstance) {
+		if (!$ownedInstance)
+			throw new Exception('owned instance is null');
 		$key = DBForeignKey::get($keyName);
 		$this->_setupOwnedInstanceCache($keyName);
 		$id = $ownedInstance->getId();
@@ -489,6 +493,7 @@ abstract class DBEntity {
 			$this->_ownedObjectCache[$keyName] = array();
 		}
 		
+		// TODO: we should be more efficient than this, but so far we're not dealing with more than 20 rows max here
 		$count = 0;
 		foreach ($this->_ownedObjectCache[$keyName] AS $instance) {
 			foreach($selector AS $key => $value) {
@@ -517,7 +522,9 @@ abstract class DBEntity {
 				$primaryColumns = $primaryColumns[0];
 			$selector[$foreignColumns] = $this->$primaryColumns;
 			$foreignClass = $key->getForeignEntityClass();
-			$this->_ownedObjectCache[$keyName][] = $foreignClass::get($selector);
+			$retVal = $foreignClass::get($selector);
+			if ($retVal)
+				$this->_ownedObjectCache[$keyName][] = $retVal;
 		}
 		return $retVal;
 	}
