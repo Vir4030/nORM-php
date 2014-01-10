@@ -417,7 +417,10 @@ abstract class DBEntity {
 	 * @param mixed $selector
 	 * @return DBEntity
 	 */
-	public static function get($selector = null) {
+	public static function get($selector) {
+		if (!$selector) {
+			throw new Exception('selector must be specified with get');
+		}
 		return static::getStore()->get($selector);
 	}
 	
@@ -565,7 +568,11 @@ abstract class DBEntity {
 		}
 		/* @var $ownedObject DBEntity */
 		foreach ($ownedData AS $ownedObject) {
-			$parentObject = static::get($ownedObject->$foreignColumns);
+			try {
+				$parentObject = static::get($ownedObject->__get($foreignColumns));
+			} catch (Exception $e) {
+				throw new Exception('foreign key ' . $key->getName() . ' defined in ' . $key->getForeignEntityClass() . ' has an invalid foreign column "' . $foreignColumns . '"');
+			}
 			if ($parentObject) {
 				$parentObject->_addOwnedInstance($key->getName(), $ownedObject);
 			}
