@@ -115,9 +115,12 @@ class DBStore {
 	 * @throws Exception
 	 *  for a malformed selector
 	 */
-	private function queryPrimitive($selector = null, $orderBy = null) {
+	private function queryPrimitive($selector = null, $orderBy = null, $maxRecords = 0, $offset = 0) {
 		$class = $this->_class;
-		$sql = 'SELECT * FROM ' . $class::getTableName();
+		$sql = 'SELECT ';
+		if ($maxRecords || $offset)
+			$sql .= $this->_connection->getPaginationAfterSelect($maxRecords, $offset). ' ';
+		$sql .= '* FROM ' . $class::getTableName();
 		$sep = ' WHERE ';
 		if (!is_null($selector)) {
 			 if (is_array($selector)) {
@@ -173,6 +176,8 @@ class DBStore {
 				$sql .= $orderBy;
 			}
 		}
+		if ($maxRecords || $offset)
+			$sql .= ' ' . $this->_connection->getPaginationAfterStatement($maxRecords, $offset);
 		return $this->_connection->query($sql);
 	}
 	

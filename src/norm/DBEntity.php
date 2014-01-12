@@ -411,6 +411,10 @@ abstract class DBEntity {
 		return DBStore::getStore(get_called_class());
 	}
 	
+	public static function first($selector, $orderBy, $maxResults = 1) {
+		return static::getStore()->getFirst($selector, $orderBy, $maxResults);
+	}
+	
 	/**
 	 * Gets one entity based on a selector.
 	 * 

@@ -151,4 +151,25 @@ class MySQLConnection extends DBConnection {
 			$safeValue = "'" . $safeValue . "'";
 		return $safeValue;
 	}
+	
+	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::getPaginationAfterSelect()
+	 */
+	public function getPaginationAfterSelect($maxRecords, $offset) {
+		return '';
+	}
+	
+	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::getPaginationAfterStatement()
+	 */
+	public function getPaginationAfterStatement($maxRecords, $offset) {
+		if ($offset && !$maxRecords)
+			throw new Exception('specifying an offset requires a max records value');
+		$sql = $maxRecords ? 'LIMIT '.$maxRecords : '';
+		if ($offset)
+			$sql .= ' OFFSET '.$offset;
+		return $sql;
+	}
 }

@@ -161,4 +161,22 @@ class MSSQLConnection extends DBConnection {
 			$safeValue = "'" . $safeValue . "'";
 		return $safeValue;
 	}
+	
+	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::getPaginationAfterSelect()
+	 */
+	public function getPaginationAfterSelect($maxRecords, $offset) {
+		if ($offset)
+			throw new Exception('MSSQL driver does not support offsets');
+		return $maxRecords ? 'TOP '.$maxRecords : '';
+	}
+	
+	/**
+	 * (non-PHPdoc)
+	 * @see DBConnection::getPaginationAfterStatement()
+	 */
+	public function getPaginationAfterStatement($maxRecords, $offset) {
+		return '';
+	}
 }

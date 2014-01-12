@@ -231,6 +231,28 @@ abstract class DBConnection {
 	 */
 	public abstract function quote($unsafeValue, $requiresQuoting = true);
 	
+	/**
+	 * Gets the SQL to use for pagination after the SELECT keyword.  This method does
+	 * not return any trailing or leading spaces.
+	 * 
+	 * @param int $maxRecords
+	 *  the maximum number of records, 0 = unlimited
+	 * @param int $offset
+	 *  the number of records to ignore at the beginning of the resultset
+	 */
+	public abstract function getPaginationAfterSelect($maxRecords, $offset);
+	
+	/**
+	 * Gets the SQL to use for pagination at the end of the SQL statement.  This method
+	 * does not return any trailing or leading spaces.
+	 * 
+	 * @param int $maxRecords
+	 *  the maximum number of records, 0 = unlimited
+	 * @param int $offset
+	 *  the number of records to ignore at the beginning of the resultset
+	 */
+	public abstract function getPaginationAfterStatement($maxRecords, $offset);
+	
 	/*******************************************************************************
 	 * GETTERS
 	 *
