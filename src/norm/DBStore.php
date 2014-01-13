@@ -125,16 +125,18 @@ class DBStore {
 		if (!is_null($selector)) {
 			 if (is_array($selector)) {
 			 	foreach ($selector as $key => $value) {
+			 		$sql .= $sep;
 			 		if (is_array($value)) {
 			 			if (isset($value['compare'])) {
 			 				$compare = $value['compare'];
+			 				if (isset($value['not']))
+			 					$sql .= 'Not ';
 			 				$value = $value['value'];
-			 				
-			 				$sql .= $sep . $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
+			 				$sql .= $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
 			 			} else {
 				 			// array value means an 'in' clause
 				 			
-				 			$sql .= $sep . $key . ' In (';
+				 			$sql .= $key . ' In (';
 				 			$count = 0;
 				 			foreach ($value AS $in_value) {
 				 				if ($count++) {
@@ -146,10 +148,10 @@ class DBStore {
 			 			}
 			 		}
 			 		else if ($value instanceof DBQuery) {
-			 			$sql .= $sep . $key . ' In (' . $value->generateSQL($this->_connection) . ')';
+			 			$sql .= $key . ' In (' . $value->generateSQL($this->_connection) . ')';
 			 		}
 			 		else {
-			 			$sql .= $sep . $key . ' = ' . $this->_connection->quote($value, $class::requiresQuoting($key));
+			 			$sql .= $key . ' = ' . $this->_connection->quote($value, $class::requiresQuoting($key));
 			 		}
 			 		$sep = ' AND ';
 			 	}
@@ -279,6 +281,37 @@ class DBStore {
 		return $entities;
 	}
 
+	/**
+	 * Gets a maximum number of records from the store using the given
+	 * selector in the order specified by the order by column or array of columns.
+	 * An optional offset can be provided if the driver supports it.
+	 * 
+	 * @param mixed $selector
+	 *  the selector to filter
+	 * @param string|array[string] $orderBy
+	 *  the order to return
+	 * @param int $maxRecords
+	 *  the maximum number of records returned
+	 * @param int $offset
+	 *  the offset from the beginning of the recordset
+	 * 
+	 * @return array[DBEntity]
+	 *  an array of entities
+	 */
+	public function getPaginated($selector, $orderBy, $maxRecords, $offset = 0) {
+		$results = array();
+		
+		$this->_profileArray['query'] -= round(microtime(true) * 1000);
+		$rs = $this->queryPrimitive($selector, $orderBy);
+		$this->_profileArray['query'] += round(microtime(true) * 1000);
+		
+		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
+		$entities = $this->createEntitiesFromResultset($rs, ($orderBy == null));
+		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
+		
+		return $entities;
+	}
+	
 	/**
 	 * Saves all of the cached entities back to the database.
 	 */

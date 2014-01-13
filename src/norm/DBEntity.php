@@ -411,8 +411,35 @@ abstract class DBEntity {
 		return DBStore::getStore(get_called_class());
 	}
 	
+	/**
+	 * Gets the first number of records matching the given selector in the order specified.
+	 * 
+	 * @param mixed $selector
+	 *  the selector to filter by
+	 * @param string|array[string] $orderBy
+	 *  the field or fields to order by
+	 * @param int $maxResults
+	 *  the maximum number of results to return (default = 1)
+	 */
 	public static function first($selector, $orderBy, $maxResults = 1) {
-		return static::getStore()->getFirst($selector, $orderBy, $maxResults);
+		return static::page($selector, $orderBy, $maxResults);
+	}
+	
+	/**
+	 * Gets the page of records matching the given selector in the order specified.  The page
+	 * will be of the given size and have the given number of records as an offset.
+	 * 
+	 * @param mixed $selector
+	 *  the selector to filter by
+	 * @param string|array[string] $orderBy
+	 *  the field or fields to order by
+	 * @param int $maxResults
+	 *  the maximum number of results to return
+	 * @param int $offset
+	 *  the number of records at the beginning to skip (default = 0)
+	 */
+	public static function page($selector, $orderBy, $maxResults, $offset = 0) {
+		return static::getStore()->getPaginated($selector, $orderBy, $maxResults, $offset);
 	}
 	
 	/**

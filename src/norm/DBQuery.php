@@ -52,6 +52,8 @@ class DBQuery {
 				if ($count++ > 0) {
 					$sql .= ' AND ';
 				}
+				if (is_array($value) && isset($value['not']))
+					$sql .= 'Not ';
 				$sql .= $key;
 				if ($value instanceof DBQuery) {
 					$sql .= ' In (' . $value->generateSQL($conn) . ')';
