@@ -522,20 +522,22 @@ abstract class DBEntity {
 	 * according to the given selector.  This method searches the cache for a matching
 	 * entity.  Responsibility for indexing this search rests in the store.
 	 * 
-	 * @param string $keyName
+	 * @param string $foreignKeyName
 	 *  foreign key name
 	 */
-	protected function _getOwnedInstance($keyName, $selector) {
-		$key = DBForeignKey::get($keyName);
+	protected function _getOwnedInstance($foreignKeyName, $selector) {
+		$foreignKey = DBForeignKey::get($foreignKeyName);
+		if (!$foreignKey)
+			throw new NullPointerException('specified key not found: '.$foreignKeyName);
 		$retVal = null;
 		
-		if (!isset($this->_ownedObjectCache[$keyName])) {
-			$this->_ownedObjectCache[$keyName] = array();
+		if (!isset($this->_ownedObjectCache[$foreignKeyName])) {
+			$this->_ownedObjectCache[$foreignKeyName] = array();
 		}
 		
 		// TODO: move this foreign key logic into the store
-		$foreignColumns = $key->getForeignColumns();
-		$primaryColumns = $key->getPrimaryColumns();
+		$foreignColumns = $foreignKey->getForeignColumns();
+		$primaryColumns = $foreignKey->getPrimaryColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
 		(is_array($primaryColumns) && (count($primaryColumns) > 1)))
 			throw new Exception('cannot load owned data through multi-column foreign key - yet');
@@ -547,7 +549,7 @@ abstract class DBEntity {
 		
 		// TODO: we should be more efficient than this, but so far we're not dealing with more than 20 rows max here
 		$count = 0;
-		foreach ($this->_ownedObjectCache[$keyName] AS $instance) {
+		foreach ($this->_ownedObjectCache[$foreignKeyName] AS $instance) {
 			$match = true;
 			foreach($selector AS $key => $value) {
 				if ($instance->$key != $value) {
@@ -566,10 +568,10 @@ abstract class DBEntity {
 		}
 		
 		if (!$retVal) {
-			$foreignClass = $key->getForeignEntityClass();
+			$foreignClass = $foreignKey->getForeignEntityClass();
 			$retVal = $foreignClass::get($selector);
 			if ($retVal)
-				$this->_ownedObjectCache[$keyName][] = $retVal;
+				$this->_ownedObjectCache[$foreignKeyName][] = $retVal;
 		}
 		return $retVal;
 	}
