@@ -413,6 +413,8 @@ abstract class DBEntity {
 	
 	/**
 	 * Gets the first number of records matching the given selector in the order specified.
+	 * Suppling a value for maxResults will cause the return value to be an array.  Not
+	 * specifying the value will use maxResults 1 and take it out of the array or return null.
 	 * 
 	 * @param mixed $selector
 	 *  the selector to filter by
@@ -420,9 +422,20 @@ abstract class DBEntity {
 	 *  the field or fields to order by
 	 * @param int $maxResults
 	 *  the maximum number of results to return (default = 1)
+	 * @return DBEntity|array[DBEntity]
+	 *  for maxResults is unspecified, just return the entity, otherwise an array
 	 */
-	public static function first($selector, $orderBy, $maxResults = 1) {
-		return static::page($selector, $orderBy, $maxResults);
+	public static function first($selector, $orderBy, $maxResults = 0) {
+		$deArray = ($maxResults == 0);
+		$maxResults = max($maxResults, 1);
+		$results = static::page($selector, $orderBy, $maxResults);
+		if ($deArray) {
+			if (count($results))
+				$results = array_pop($results);
+			else
+				$results = null;
+		}
+		return $results;
 	}
 	
 	/**
@@ -462,6 +475,10 @@ abstract class DBEntity {
 	 */
 	public static function getAll($selector = null, $orderedBy = null, $indexed = null) {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
+	}
+	
+	public static function countAll() {
+		return static::getStore()->countAll();
 	}
 	
 	protected function _setupOwnedInstanceCache($keyName) {
@@ -528,7 +545,7 @@ abstract class DBEntity {
 	protected function _getOwnedInstance($foreignKeyName, $selector) {
 		$foreignKey = DBForeignKey::get($foreignKeyName);
 		if (!$foreignKey)
-			throw new NullPointerException('specified key not found: '.$foreignKeyName);
+			throw new Exception('specified key not found: '.$foreignKeyName);
 		$retVal = null;
 		
 		if (!isset($this->_ownedObjectCache[$foreignKeyName])) {

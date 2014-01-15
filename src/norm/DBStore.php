@@ -265,10 +265,18 @@ class DBStore {
 	 * 
 	 * SQL => SELECT * FROM {_tableName} ORDER BY {_orderBy}
 	 * 
+	 * When the selector is null, this returns the entire cache, if anything is there.
+	 * This should always be the first method called for any entity if it is to be called at all
+	 * without an argument.  With an argument, it will always fetch the results from the database.
+	 * All results will always be cached by ID for individual gets.
+	 * 
 	 * @return array[DBEntity]
 	 */
 	public function getAll($selector = null, $orderBy = null) {
 		$results = array();
+		
+		if (!$selector && count($this->_cachedEntities))
+			return $this->_cachedEntities;
 		
 		$this->_profileArray['query'] -= round(microtime(true) * 1000);
 		$rs = $this->queryPrimitive($selector, $orderBy);
@@ -281,6 +289,10 @@ class DBStore {
 		return $entities;
 	}
 
+	public function countAll() {
+		return count($this->getAll());
+	}
+	
 	/**
 	 * Gets a maximum number of records from the store using the given
 	 * selector in the order specified by the order by column or array of columns.
@@ -300,9 +312,8 @@ class DBStore {
 	 */
 	public function getPaginated($selector, $orderBy, $maxRecords, $offset = 0) {
 		$results = array();
-		
 		$this->_profileArray['query'] -= round(microtime(true) * 1000);
-		$rs = $this->queryPrimitive($selector, $orderBy);
+		$rs = $this->queryPrimitive($selector, $orderBy, $maxRecords, $offset);
 		$this->_profileArray['query'] += round(microtime(true) * 1000);
 		
 		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
