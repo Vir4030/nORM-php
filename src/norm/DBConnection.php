@@ -71,6 +71,12 @@ abstract class DBConnection {
 	private $_queryLogArray = array();
 	
 	/**
+	 * query log total
+	 * @var number
+	 */
+	private $_queryLogTotal = 0.0;
+	
+	/**
 	 * the current query
 	 * 
 	 * @var DBLog
@@ -339,6 +345,7 @@ abstract class DBConnection {
 	
 	protected function logQueryEnd() {
 		$this->_currentQueryLog->end();
+		$this->_queryLogTotal += $this->_currentQueryLog->getCompleteTime();
 	}
 	
 	protected function logQueryError($message) {
@@ -347,6 +354,10 @@ abstract class DBConnection {
 	
 	public function dumpQueryLog($html = false) {
 		$br = $html ? '<br>' : "\n";
+		if ($html)
+			echo('<b class="large">total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms</b>');
+		else
+			echo('total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms');
 		echo($br . '== Query Log ==' . $br);
 		foreach ($this->getQueryLog() AS $queryLog) {
 			if ($queryLog->isCompleted()) {
