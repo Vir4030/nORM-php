@@ -131,7 +131,7 @@ class DBStore {
 			 				$compare = $value['compare'];
 			 				if (isset($value['not']))
 			 					$sql .= 'Not ';
-			 				$value = $value['value'];
+			 				$value = $class::convertToDatabase($key, $value['value']);
 			 				$sql .= $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
 			 			} else {
 				 			// array value means an 'in' clause

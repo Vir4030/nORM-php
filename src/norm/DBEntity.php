@@ -145,9 +145,7 @@ abstract class DBEntity {
 			$value = $this->_changedProperties[$field];
 		else if (isset($this->_properties[$field]))
 			$value = $this->_properties[$field];
-		if (isset(static::$_fields[$field])) {
-			$value = static::$_fields[$field]->convertFromDatabase($value);
-		}
+		$value = static::convertFromDatabase($field, $value);
 		return $value;
 	}
 	
@@ -158,14 +156,25 @@ abstract class DBEntity {
 	 * @param mixed  $value the value of the field
 	 */
 	public function __set($field, $value) {
-		if (isset(static::$_fields[$field]))
-			$value = static::$_fields[$field]->convertToDatabase($value);
+		$value = $this->convertToDatabase($field, $value);
 		if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
 			if (isset($this->_changedProperties[$field]))
 				unset($this->_changedProperties[$field]);
 		} else if (!isset($this->_changedProperties[$field]) || ($value !== $this->_changedProperties[$field])) {
 			$this->_changedProperties[$field] = $value;
 		}
+	}
+	
+	public static function convertFromDatabase($field, $value) {
+		if (isset(static::$_fields[$field]))
+			$value = static::$_fields[$field]->convertFromDatabase($value);
+		return $value;
+	}
+	
+	public static function convertToDatabase($field, $value) {
+		if (isset(static::$_fields[$field]))
+			$value = static::$_fields[$field]->convertToDatabase($value);
+		return $value;
 	}
 	
 	/**

@@ -61,7 +61,7 @@ class DBQuery {
 				else if (is_array($value)) {
 		 			if (isset($value['compare'])) {
 		 				$compare = $value['compare'];
-		 				$value = $value['value'];
+		 				$value = $class::convertToDatabase($key, $value['value']);
 		 				
 		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
 		 			} else {
