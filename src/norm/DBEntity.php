@@ -618,7 +618,17 @@ abstract class DBEntity {
 			$foreignColumns = $foreignColumns[0];
 		if (is_array($primaryColumns))
 			$primaryColumns = $primaryColumns[0];
-		$subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
+		
+		// eventually, this needs to be handled by a selector class
+		// an array which is indexed and has the same number of values as the number of keys
+		// ^ this should not be handled with a new DBQuery (subquery)
+		// of course, this is not supported yet, and will not be needed for any future databases
+		if (is_array($selector))
+			$subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
+		else if (is_null($selector))
+			$subSelector = null;
+		else
+			$subSelector = array($foreignColumns => $selector);
 		$ownedClass = $key->getForeignEntityClass();
 		/* @var $ownedClass DBEntity */
 		$ownedData = $ownedClass::getAll($subSelector);

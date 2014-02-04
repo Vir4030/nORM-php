@@ -82,9 +82,22 @@ class DBQuery {
 					$sql .= ' = ' . $conn->quote($value, $class::requiresQuoting($key));
 				}
 			}
-		} else {
-			$key = $class::getIdField();
-			$sql .= $key . ' = ' . $conn->quote($value, $class::requiresQuoting($key));
+		} else if ($this->_selector) { // this code is somewhat untested
+			if (is_array($class::getIdField())) {
+				throw new Exception('key with multiple fields requires array-based selector');
+			}
+			if (is_array($this->_selector)) {
+				$count = 0;
+				foreach ($this->_selector AS $field => $value) {
+					if ($count++) {
+						$sql .= ' AND ';
+					}
+					$sql .= $field . ' = ' . $conn->quote($value, $class::requiresQuoting($field));
+				}
+			} else {
+				$sql .= $class::getIdField() . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($class::getIdField()));
+			}
+			$sql .= $key . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($key));
 		}
 		return $sql;
 	}

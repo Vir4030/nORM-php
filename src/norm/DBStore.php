@@ -156,11 +156,18 @@ class DBStore {
 			 		$sep = ' AND ';
 			 	}
 			 }
-			 else {
+			 else if ($selector) {
 			 	if (is_array($class::getIdField())) {
 			 		throw new Exception('key with multiple fields requires array-based selector');
 			 	}
-			 	$sql .= $sep . $class::getIdField() . ' = ' . $this->_connection->quote($selector, $class::requiresQuoting($class::getIdField()));
+			 	if (is_array($selector)) {
+			 		foreach ($selector AS $field => $value) {
+			 			$sql .= $sep . $field . ' = ' . $this->_connection->quote($value, $class::requiresQuoting($field));
+			 			$sep = ' AND ';
+			 		}
+			 	} else {
+			 		$sql .= $sep . $class::getIdField() . ' = ' . $this->_connection->quote($selector, $class::requiresQuoting($class::getIdField()));
+			 	}
 			}
 		}
 		if (!is_null($orderBy)) {
