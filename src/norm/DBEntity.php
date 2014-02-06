@@ -486,6 +486,10 @@ abstract class DBEntity {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
 	}
 	
+	public static function getCached() {
+		return static::getStore()->getCached();
+	}
+	
 	public static function countAll() {
 		return static::getStore()->countAll();
 	}

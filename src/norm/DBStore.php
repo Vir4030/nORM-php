@@ -296,6 +296,10 @@ class DBStore {
 		return $entities;
 	}
 
+	public function getCached() {
+		return $this->_cachedEntities;
+	}
+	
 	public function countAll() {
 		return count($this->getAll());
 	}
