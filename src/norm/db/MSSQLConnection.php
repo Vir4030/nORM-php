@@ -10,11 +10,19 @@ class MSSQLConnection extends DBConnection {
 	public function connect() {
 		if ($this->_db)
 			$this->disconnect();
-		$this->_db = mssql_connect(
-			$this->getHost() . ':' . $this->getPort(),
-			$this->getUsername(),
-			$this->getPassword()
-		);
+		if ($this->getPooling()) {
+			$this->_db = mssql_pconnect(
+				$this->getHost() . ':' . $this->getPort(),
+				$this->getUsername(),
+				$this->getPassword()
+			);
+		} else {
+			$this->_db = mssql_connect(
+				$this->getHost() . ':' . $this->getPort(),
+				$this->getUsername(),
+				$this->getPassword()
+			);
+		}
 		if ($this->getCatalog()) {
 			mssql_select_db($this->getCatalog(), $this->_db);
 		}

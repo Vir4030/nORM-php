@@ -6,13 +6,23 @@ class MySQLConnection extends DBConnection {
 	public function connect() {
 		if (!$this->_db) {
 			$this->logQueryBegin('CONNECTING TO ' . $this->getHost() . ', CATALOG ' . $this->getCatalog());
-			$this->_db = mysqli_connect(
-				$this->getHost(),
-				$this->getUsername(),
-				$this->getPassword(),
-				$this->getCatalog(),
-				$this->getPort()
-			);
+			if ($this->getPooling()) {
+				$this->_db = mysqli_connect(
+					'p:'.$this->getHost(),
+					$this->getUsername(),
+					$this->getPassword(),
+					$this->getCatalog(),
+					$this->getPort()
+				);
+			} else {
+				$this->_db = mysqli_connect(
+					$this->getHost(),
+					$this->getUsername(),
+					$this->getPassword(),
+					$this->getCatalog(),
+					$this->getPort()
+				);
+			}
 			$this->logQueryEnd();
 		}
 	}

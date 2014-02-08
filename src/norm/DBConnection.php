@@ -43,6 +43,12 @@ abstract class DBConnection {
 	private $_catalog;
 	
 	/**
+	 * True if this connection should use pooling
+	 * @var boolean
+	 */
+	private $_pooling;
+	
+	/**
 	 * The MySQL type string to be used in configuration files.
 	 * 
 	 * @var string
@@ -121,12 +127,12 @@ abstract class DBConnection {
 	 * @param int    $port     the port number to connect to
 	 * @param string $catalog  the catalog name to use
 	 */
-	public static function create($type, $host, $username, $password, $port, $catalog = '') {
+	public static function create($type, $host, $username, $password, $port, $catalog = '', $pooling = false) {
 		switch ($type) {
 			case DBConnection::TYPE_MYSQL:
-				return new MySQLConnection($host, $username, $password, $port, $catalog);
+				return new MySQLConnection($host, $username, $password, $port, $catalog, $pooling);
 			case DBConnection::TYPE_MSSQL:
-				return new MSSQLConnection($host, $username, $password, $port, $catalog);
+				return new MSSQLConnection($host, $username, $password, $port, $catalog, $pooling);
 		}
 		return null;
 	}
@@ -141,12 +147,13 @@ abstract class DBConnection {
 	 * @param int    $port     the port number to connect to
 	 * @param string $catalog  the catalog name to use
 	 */
-	private function __construct($host, $username, $password, $port, $catalog = '') {
+	private function __construct($host, $username, $password, $port, $catalog, $pooling) {
 		$this->_host = $host;
 		$this->_username = $username;
 		$this->_password = $password;
 		$this->_port = $port;
 		$this->_catalog = $catalog;
+		$this->_pooling = $pooling;
 	}
 
 	/*******************************************************************************
@@ -319,6 +326,15 @@ abstract class DBConnection {
 	 */
 	public function getCatalog() {
 		return $this->_catalog;
+	}
+	
+	/**
+	 * Checks if this connection uses pooling.
+	 * 
+	 * @return boolean true if it uses pooling
+	 */
+	public function getPooling() {
+		return $this->_pooling;
 	}
 	
 	/**

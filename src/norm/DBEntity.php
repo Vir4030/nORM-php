@@ -676,7 +676,9 @@ abstract class DBEntity {
 		$ownedClass::loadForeign($subForeignArray, $subSelector);
 	}
 	
-	public static function loadForeign($foreignArray, $selector = null) {
+	public static function loadForeign($foreignArray, $selector = false) {
+		if ($selector === false)
+			throw new Exception('you must specify a selector when loading foreign data');
 		if (!is_array($foreignArray))
 			$foreignArray = array($foreignArray);
 		foreach ($foreignArray AS $keyName => $value) {
@@ -690,6 +692,8 @@ abstract class DBEntity {
 			}
 			$key = DBForeignKey::get($keyName);
 			if (get_called_class() == $key->getPrimaryEntityClass()) {
+				if (!isset(static::$_ownedData[$keyName]))
+					throw new Exception('did not declare owned data in foreign key definition '.$keyName);
 				static::_loadOwnedData(static::$_ownedData[$keyName], $selector, $subForeignArray);
 			}
 			else if (get_called_class() == $key->getForeignEntityClass()) {
