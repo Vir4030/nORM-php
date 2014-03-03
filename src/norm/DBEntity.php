@@ -166,14 +166,16 @@ abstract class DBEntity {
 	}
 	
 	public static function convertFromDatabase($field, $value) {
-		if (isset(static::$_fields[$field]))
-			$value = static::$_fields[$field]->convertFromDatabase($value);
+		$className = get_called_class();
+		if (isset(self::$_fields[$className][$field]))
+			$value = self::$_fields[$className][$field]->convertFromDatabase($value);
 		return $value;
 	}
 	
 	public static function convertToDatabase($field, $value) {
-		if (isset(static::$_fields[$field]))
-			$value = static::$_fields[$field]->convertToDatabase($value);
+		$className = get_called_class();
+		if (isset(self::$_fields[$className][$field]))
+			$value = self::$_fields[$className][$field]->convertToDatabase($value);
 		return $value;
 	}
 	
@@ -185,9 +187,10 @@ abstract class DBEntity {
 	}
 	
 	public static function requiresQuoting($field) {
+		$className = get_called_class();
 		$value = true;
-		if (isset(static::$_fields[$field]))
-			$value = static::$_fields[$field]->requiresQuoting();
+		if (isset(self::$_fields[$className][$field]))
+			$value = self::$_fields[$className][$field]->requiresQuoting();
 		return $value;
 	}
 	
@@ -490,6 +493,10 @@ abstract class DBEntity {
 		return static::getStore()->getCached();
 	}
 	
+	public static function clearCache() {
+		static::getStore()->clearCache();
+	}
+	
 	public static function countAll() {
 		return static::getStore()->countAll();
 	}
@@ -740,6 +747,17 @@ abstract class DBEntity {
 	}
 	
 	public static function declareField($name, $field) {
-		static::$_fields[$name] = $field;
+		$className = get_called_class();
+		self::$_fields[$className][$name] = $field;
+	}
+	
+	public static function getFields() {
+		$className = get_called_class();
+		return self::$_fields[$className];
+	}
+	
+	public static function getFieldNames() {
+		$className = get_called_class();
+		return array_keys(self::$_fields[$className]);
 	}
 }

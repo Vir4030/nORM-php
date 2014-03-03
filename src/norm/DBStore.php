@@ -202,11 +202,13 @@ class DBStore {
 	 *  the implementation-specific resultset object, to be passed into the connection
 	 * @param boolean $indexed
 	 *  true if the array should be indexed by the global unique identifier for each object
+	 * @param string $indexedBy
+	 *  the field to index by
 	 * @return array[DBEntity]
 	 *  the array of entities created from the resultset
 	 */
 	
-	private function createEntitiesFromResultset($rs, $indexed = false) {
+	private function createEntitiesFromResultset($rs, $indexed = false, $indexedBy = null) {
 		$entities = array();
 		/* @var $entity DBEntity */
 		$entity = null;
@@ -220,7 +222,10 @@ class DBStore {
 			if (isset($this->_cachedEntities[$idKey]))
 				$entity = $this->_cachedEntities[$idKey];
 			if ($indexed) {
-				$entities[$idKey] = $entity;
+				if ($indexedBy)
+					$entities[$entity->$indexedBy] = $entity;
+				else
+					$entities[$idKey] = $entity;
 			} else {
 				$entities[] = $entity;
 			}
@@ -279,7 +284,7 @@ class DBStore {
 	 * 
 	 * @return array[DBEntity]
 	 */
-	public function getAll($selector = null, $orderBy = null) {
+	public function getAll($selector = null, $orderBy = null, $indexedBy = null) {
 		$results = array();
 		
 		if (!$selector && count($this->_cachedEntities))
@@ -290,7 +295,7 @@ class DBStore {
 		$this->_profileArray['query'] += round(microtime(true) * 1000);
 		
 		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
-		$entities = $this->createEntitiesFromResultset($rs, ($orderBy == null));
+		$entities = $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
 		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
 		
 		return $entities;
@@ -298,6 +303,10 @@ class DBStore {
 
 	public function getCached() {
 		return $this->_cachedEntities;
+	}
+	
+	public function clearCache() {
+		$this->_cachedEntities = array();
 	}
 	
 	public function countAll() {
