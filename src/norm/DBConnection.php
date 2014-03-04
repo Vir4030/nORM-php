@@ -63,11 +63,11 @@ abstract class DBConnection {
 	const TYPE_MSSQL = 'mssql';
 	
 	/**
-	 * cached database configurations
+	 * cached database connections
 	 * 
-	 * @var array[DBConfiguration]
+	 * @var array[DBConnection]
 	 */
-	private static $_cachedConfigurations = array();
+	private static $_cachedConnections = array();
 	
 	/**
 	 * query log details
@@ -98,23 +98,23 @@ abstract class DBConnection {
 	 *   the configuration
 	 */
 	public static function register($name, $connection) {
-		DBConnection::$_cachedConfigurations[$name] = $connection;
+		DBConnection::$_cachedConnections[$name] = $connection;
 	}
 	
 	/**
-	 * Gets the configuration for the given identifier.
+	 * Gets the connection for the given identifier.
 	 * 
 	 * @param string $name
-	 *   the identifier for this configuration
-	 * @return DBConfiguration
-	 *   the configuration
+	 *   the identifier for this connection
+	 * @return DBConnection
+	 *   the connection
 	 */
 	public static function get($name) {
 		if (!$name)
-			throw new Exception('database configuration name not supplied');
-		if (!isset(DBConnection::$_cachedConfigurations[$name]))
-			throw new Exception('cannot find database configuration for ' . $name);
-		return DBConnection::$_cachedConfigurations[$name];
+			throw new Exception('database connection name not supplied');
+		if (!isset(DBConnection::$_cachedConnections[$name]))
+			throw new Exception('cannot find database connection for ' . $name);
+		return DBConnection::$_cachedConnections[$name];
 	}
 	
 	/**
