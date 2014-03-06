@@ -369,6 +369,9 @@ abstract class DBConnection {
 	}
 	
 	public function dumpQueryLog($html = false) {
+		if (error_get_last())
+			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 373)\n");
+		
 		$br = $html ? '<br>' : "\n";
 		if ($html)
 			echo('<b class="large">total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms</b>');

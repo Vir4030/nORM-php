@@ -305,6 +305,10 @@ class DBStore {
 		return $this->_cachedEntities;
 	}
 	
+	public function cache($selector, $indexedBy = null) {
+		static::getAll($selector, null, $indexedBy);
+	}
+	
 	public function clearCache() {
 		$this->_cachedEntities = array();
 	}
@@ -400,6 +404,7 @@ class DBStore {
 		$id = $this->_connection->insert($class, $entity->getDirtyProperties());
 		if ($id && ($id !== TRUE)) {
 			$entity->setId($id);
+			$this->_cachedEntities[$entity->getLocalUniqueIdentifier()] = $entity;
 		}
 	}
 	

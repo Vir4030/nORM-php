@@ -500,6 +500,10 @@ abstract class DBEntity {
 		static::getStore()->clearCache();
 	}
 	
+	public static function cache($selector, $indexedBy = null) {
+		static::getStore()->cache($selector, $indexedBy);
+	}
+	
 	public static function countAll() {
 		return static::getStore()->countAll();
 	}
