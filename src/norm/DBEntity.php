@@ -553,9 +553,13 @@ abstract class DBEntity {
 				$foreignColumns = $foreignColumns[0];
 			if (is_array($primaryColumns))
 				$primaryColumns = $primaryColumns[0];
-			$selector = array($foreignColumns => $this->$primaryColumns);
-			$foreignClass = $key->getForeignEntityClass();
-			$this->_ownedObjectCache[$keyName] = $foreignClass::getAll($selector);
+			if ($this->$primaryColumns) {
+				$selector = array($foreignColumns => $this->$primaryColumns);
+				$foreignClass = $key->getForeignEntityClass();
+				$this->_ownedObjectCache[$keyName] = $foreignClass::getAll($selector);
+			} else {
+				$this->_ownedObjectCache[$keyName] = array();
+			}
 		}
 		$retVal = $this->_ownedObjectCache[$keyName];
 		return $retVal;
