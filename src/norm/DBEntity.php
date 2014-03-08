@@ -500,7 +500,7 @@ abstract class DBEntity {
 		static::getStore()->clearCache();
 	}
 	
-	public static function cache($selector, $indexedBy = null) {
+	public static function cache($selector = null, $indexedBy = null) {
 		static::getStore()->cache($selector, $indexedBy);
 	}
 	

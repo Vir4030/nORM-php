@@ -305,7 +305,7 @@ class DBStore {
 		return $this->_cachedEntities;
 	}
 	
-	public function cache($selector, $indexedBy = null) {
+	public function cache($selector = null, $indexedBy = null) {
 		static::getAll($selector, null, $indexedBy);
 	}
 	
