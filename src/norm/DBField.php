@@ -74,7 +74,7 @@ class DBField {
 		if ($this->binaryOnly)
 			$outValue = $outValue ? true : false;
 		else if ($this->getDateFormat() && $outValue)
-			$outValue = strtotime($outValue);
+			$outValue = strtotime($outValue . ' GMT');
 		return $outValue;
 	}
 }

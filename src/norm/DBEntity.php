@@ -522,7 +522,14 @@ abstract class DBEntity {
 	protected function _addOwnedInstance($keyName, $ownedInstance) {
 		if (!$ownedInstance)
 			throw new Exception('owned instance is null');
+		
+		// set foreign ID
 		$key = DBForeignKey::get($keyName);
+		$foreignColumns = $key->getForeignColumns();
+		if (!is_array($foreignColumns))
+			$ownedInstance->__set($foreignColumns, $this->getId());
+		
+		// store in cache
 		$this->_setupOwnedInstanceCache($keyName);
 		$id = $ownedInstance->getId();
 		if (is_array($id) || !$ownedInstance->getId()) {
