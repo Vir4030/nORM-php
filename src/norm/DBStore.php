@@ -45,6 +45,12 @@ class DBStore {
 	private $_cachedEntities = array();
 	
 	/**
+	 * new entity objects
+	 * @var array[DBEntity]
+	 */
+	private $_newEntities = array();
+	
+	/**
 	 * cached database stores
 	 * @var array[DBStore]
 	 */
@@ -217,8 +223,8 @@ class DBStore {
 			// TODO: don't instantiate the object when it's a cache hit
 			$entity = new $class($row);
 			$idKey = $entity->getLocalUniqueIdentifier();
-			if (!$idKey)
-				throw new Exception('id key is not properly configured for class ' . get_class($this));
+			if ($idKey == null)
+				throw new Exception('id key is not properly configured for class ' . $this->_class . ' (id = '.$entity->getId().')');
 			if (isset($this->_cachedEntities[$idKey]))
 				$entity = $this->_cachedEntities[$idKey];
 			if ($indexed) {
@@ -287,8 +293,11 @@ class DBStore {
 	public function getAll($selector = null, $orderBy = null, $indexedBy = null) {
 		$results = array();
 		
-		if (!$selector && count($this->_cachedEntities))
+		if (!$selector && count($this->_cachedEntities)) {
+			if (count($this->_newEntities))
+				return array_merge($this->_cachedEntities, $this->_newEntities);
 			return $this->_cachedEntities;
+		}
 		
 		$this->_profileArray['query'] -= round(microtime(true) * 1000);
 		$rs = $this->queryPrimitive($selector, $orderBy);
@@ -305,6 +314,10 @@ class DBStore {
 		return $this->_cachedEntities;
 	}
 	
+	public function getNew() {
+		return $this->_newEntities;
+	}
+	
 	public function cache($selector = null, $indexedBy = null) {
 		static::getAll($selector, null, $indexedBy);
 	}
@@ -315,6 +328,17 @@ class DBStore {
 	
 	public function countAll() {
 		return count($this->getAll());
+	}
+	
+	/**
+	 * Puts a new entity into this store, without an ID.
+	 * 
+	 * @param DBEntity $entity
+	 */
+	public function putNew($entity) {
+		if ($entity->getLocalUniqueIdentifier())
+			throw new Exception('Entity '.get_class($entity).' with ID '.$entity->getId().' cannot be addded into store for '.$this->_class);
+		$this->_newEntities[] = $entity;
 	}
 	
 	/**
@@ -354,6 +378,11 @@ class DBStore {
 		foreach ($this->_cachedEntities AS $entity) {
 			$entity->save(); // seems awkward, but necessary to ensure foreign key values are always set, for example
 		}
+		foreach ($this->_newEntities AS $entity) {
+			$entity->save();
+			$this->_cachedEntities[$entity->getLocalUniqueIdentifier()] = $entity;
+		}
+		$this->_newEntities = array();
 	}
 	
 	/**
@@ -362,7 +391,7 @@ class DBStore {
 	 * @param DBEntity $entity
 	 */
 	public function save($entity) {
-		if (isset($this->_cachedEntities[$entity->getLocalUniqueIdentifier()]))
+		if ($entity->getLocalUniqueIdentifier())
 			$this->update($entity);
 		else
 			$this->insert($entity);

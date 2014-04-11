@@ -186,6 +186,15 @@ abstract class DBConnection {
 	public abstract function query($sql);
 	
 	/**
+	 * Executes the given query, returning the first field from the first row of the resultset.
+	 * 
+	 * @param string $sql
+	 *  the SQL string for the query
+	 * @return mixed
+	 */
+	public abstract function field($sql);
+	
+	/**
 	 * Updates data in the given table to set the dirty properties for the record specified by the ID array.
 	 * 
 	 * @param string       $class     the class being updated

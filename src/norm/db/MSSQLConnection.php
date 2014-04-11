@@ -51,6 +51,15 @@ class MSSQLConnection extends DBConnection {
 		$this->logQuerySplit();
 		return $rs;
 	}
+
+	public function field($sql) {
+		$field = null;
+		$rs = $this->query($sql);
+		if (($row = mssql_fetch_row($rs)) !== null)
+			$field = $row[0];
+		mssql_free_result($rs);
+		return $field;
+	}
 	
 	/**
 	 * (non-PHPdoc)

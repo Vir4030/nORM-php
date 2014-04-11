@@ -47,6 +47,15 @@ class MySQLConnection extends DBConnection {
 		return $rs;
 	}
 
+	public function field($sql) {
+		$field = null;
+		$rs = $this->query($sql);
+		if (($row = mysqli_fetch_array($rs, MYSQLI_NUM)) !== null)
+			$field = $row[0];
+		mysqli_free_result($rs);
+		return $field;
+	}
+	
 	/**
 	 * (non-PHPdoc)
 	 * @see DBConnection::delete()
