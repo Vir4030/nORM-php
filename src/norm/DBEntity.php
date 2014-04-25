@@ -494,7 +494,7 @@ abstract class DBEntity {
 	 * @return DBEntity
 	 */
 	public static function get($selector) {
-		if (!$selector) {
+		if ($selector == null) {
 			throw new Exception('selector must be specified with get');
 		}
 		return static::getStore()->get($selector);
