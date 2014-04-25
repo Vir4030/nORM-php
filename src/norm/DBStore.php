@@ -255,9 +255,9 @@ class DBStore {
 	 */
 	public function get($selector) {
 		$class = $this->_class;
-		if (!is_array($selector) && isset($this->_cachedEntities[$selector])) {
+		if (!is_array($selector) && isset($this->_cachedEntities[$selector]))
 			return $this->_cachedEntities[$selector];
-		}
+
 		$rs = $this->queryPrimitive($selector);
 		$entities = $this->createEntitiesFromResultset($rs);
 		if (count($entities) == 0)
