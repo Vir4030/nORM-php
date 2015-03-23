@@ -52,22 +52,32 @@ class DBQuery {
 				if ($count++ > 0) {
 					$sql .= ' AND ';
 				}
-				if (is_array($value) && isset($value['not']))
-					$sql .= 'Not ';
-				$sql .= $key;
 				if ($value instanceof DBQuery) {
-					$sql .= ' In (' . $value->generateSQL($conn) . ')';
+					$sql .= $key . ' In (' . $value->generateSQL($conn) . ')';
 				}
 				else if (is_array($value)) {
-		 			if (isset($value['compare'])) {
-		 				$compare = $value['compare'];
-		 				$value = $class::convertToDatabase($key, $value['value']);
-		 				
-		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
+					if (isset($value['value']) || isset($value['not']) || isset($value['compare'])) {
+						if (is_null($value['value'])) {
+							$sql .= $key;
+							if (isset($value['not']))
+								$sql .= ' Is Not';
+							else
+								$sql .= ' Is';
+							$sql .= ' Null';
+						} else {
+							$compare = '=';
+							if (isset($value['compare']))
+								$compare = $value['compare'];
+				 			if (isset($value['not']) && $value['not'])
+				 				$sql .= 'Not ';
+			 				$value = $class::convertToDatabase($key, $value['value']);
+			 				
+			 				$sql .= $key . ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
+						}
 		 			} else {
 			 			// array value means an 'in' clause
 			 			
-			 			$sql .= ' In (';
+			 			$sql .= $key . ' In (';
 			 			$count = 0;
 			 			foreach ($value AS $in_value) {
 			 				if ($count++) {
@@ -78,8 +88,11 @@ class DBQuery {
 			 			$sql .= ')';
 		 			}
 				}
+				else if (is_null($value)) {
+					$sql .= $key . ' Is Null';
+				}
 				else {
-					$sql .= ' = ' . $conn->quote($value, $class::requiresQuoting($key));
+					$sql .= $key . ' = ' . $conn->quote($value, $class::requiresQuoting($key));
 				}
 			}
 		} else if ($this->_selector) { // this code is somewhat untested
@@ -97,7 +110,6 @@ class DBQuery {
 			} else {
 				$sql .= $class::getIdField() . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($class::getIdField()));
 			}
-			$sql .= $key . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($key));
 		}
 		return $sql;
 	}

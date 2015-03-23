@@ -90,6 +90,20 @@ abstract class DBConnection {
 	private $_currentQueryLog = null;
 	
 	/**
+	 * enables the query log
+	 * 
+	 * @var boolean
+	 */
+	private static $_queryLogEnabled = false;
+	
+	/**
+	 * Enables query logging for all database connections.
+	 */
+	public static function enableQueryLog() {
+		DBConnection::$_queryLogEnabled = true;
+	}
+	
+	/**
 	 * Registers the given configuration with the given identifier (name).
 	 * 
 	 * @param string $name
@@ -356,28 +370,34 @@ abstract class DBConnection {
 	}
 	
 	protected function logQueryBegin($sql) {
+		if (!DBConnection::$_queryLogEnabled) return;
 		$this->_currentQueryLog = new DBLog($sql);
 		$this->_queryLogArray[] = $this->_currentQueryLog;
 	}
 	
 	protected function logQuerySplit() {
+		if (!DBConnection::$_queryLogEnabled) return;
 		$this->_currentQueryLog->split();
 	}
 	
 	protected function logQueryRows($rows) {
+		if (!DBConnection::$_queryLogEnabled) return;
 		$this->_currentQueryLog->setRowsAffected($rows);
 	}
 	
 	protected function logQueryEnd() {
+		if (!DBConnection::$_queryLogEnabled) return;
 		$this->_currentQueryLog->end();
 		$this->_queryLogTotal += $this->_currentQueryLog->getCompleteTime();
 	}
 	
 	protected function logQueryError($message) {
+		if (!DBConnection::$_queryLogEnabled) return;
 		$this->_currentQueryLog->error($message);
 	}
 	
 	public function dumpQueryLog($html = false) {
+		if (!DBConnection::$_queryLogEnabled) return;
 		if (error_get_last())
 			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 373)\n");
 		

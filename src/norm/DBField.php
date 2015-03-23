@@ -58,6 +58,8 @@ class DBField {
 	}
 	
 	public function convertToDatabase($inValue) {
+		if (is_object($inValue))
+			throw new Exception("cannot convert an object to the database");
 		$outValue = $inValue;
 		if ($this->binaryOnly)
 			$outValue = $outValue ? 1 : 0;
