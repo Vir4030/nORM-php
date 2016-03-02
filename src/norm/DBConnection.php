@@ -377,9 +377,10 @@ abstract class DBConnection {
 		$this->_currentQueryLog->error($message);
 	}
 	
-	public function dumpQueryLog($html = false) {
-		if (error_get_last())
-			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 373)\n");
+	public function dumpQueryLog($html = false, $force = false) {
+		if (!$force && error_get_last()) {
+			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 383)\n");
+		}
 		
 		$br = $html ? '<br>' : "\n";
 		if ($html)

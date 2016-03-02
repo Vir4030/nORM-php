@@ -61,9 +61,17 @@ class DBQuery {
 				else if (is_array($value)) {
 		 			if (isset($value['compare'])) {
 		 				$compare = $value['compare'];
-		 				$value = $class::convertToDatabase($key, $value['value']);
-		 				
-		 				$sql .= ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
+		 				if (isset($value['not']))
+		 					$sql .= 'Not ';
+		 				if ($compare == 'between') {
+		 					$low = $class::convertToDatabase($key, $value['low']);
+		 					$high = $class::convertToDatabase($key, $value['high']);
+		 					$sql .= ' BETWEEN ' . $conn->quote($low, $class::requiresQuoting($key));
+		 					$sql .= ' AND ' . $conn->quote($high, $class::requiresQuoting($key));
+		 				} else {
+			 				$value = $class::convertToDatabase($key, $value['value']);
+			 				$sql .= ' ' . $compare . ' ' . $conn->quote($value, $class::requiresQuoting($key));
+		 				}
 		 			} else {
 			 			// array value means an 'in' clause
 			 			

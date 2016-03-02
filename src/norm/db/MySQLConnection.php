@@ -96,7 +96,7 @@ class MySQLConnection extends DBConnection {
 		$count = 0;
 		foreach ($fields AS $key => $value) {
 			if ($count++)
-				$sql .= ',';
+				$sql .= ', ';
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ' WHERE ';
@@ -173,6 +173,8 @@ class MySQLConnection extends DBConnection {
 		$safeValue = mysqli_real_escape_string($this->_db, ''.$unsafeValue);
 		if ($requiresQuoting)
 			$safeValue = "'" . $safeValue . "'";
+		else if ((trim($safeValue) == '') || (strcasecmp($safeValue, 'null') == 0))
+			$safeValue = 'null';
 		return $safeValue;
 	}
 	

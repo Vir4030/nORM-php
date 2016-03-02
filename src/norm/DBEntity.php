@@ -695,7 +695,7 @@ abstract class DBEntity {
 			try {
 				$parentObject = static::get($ownedObject->__get($foreignColumns));
 			} catch (Exception $e) {
-				throw new Exception('foreign key ' . $key->getName() . ' defined in ' . $key->getForeignEntityClass() . ' has an invalid foreign column "' . $foreignColumns . '"');
+				throw new Exception('foreign key ' . $key->getName() . ' defined in ' . $key->getForeignEntityClass() . ' has an invalid foreign column "' . $foreignColumns . '": '.$e->getMessage());
 			}
 			if ($parentObject) {
 				$parentObject->_addOwnedInstance($key->getName(), $ownedObject);

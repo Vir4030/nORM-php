@@ -137,8 +137,15 @@ class DBStore {
 			 				$compare = $value['compare'];
 			 				if (isset($value['not']))
 			 					$sql .= 'Not ';
-			 				$value = $class::convertToDatabase($key, $value['value']);
-			 				$sql .= $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
+			 				if ($compare == 'between') {
+			 					$low = $class::convertToDatabase($key, $value['low']);
+			 					$high = $class::convertToDatabase($key, $value['high']);
+			 					$sql .= $key . ' BETWEEN ' . $this->_connection->quote($low, $class::requiresQuoting($key));
+			 					$sql .= ' AND ' . $this->_connection->quote($high, $class::requiresQuoting($key));
+			 				} else {
+			 					$value = $class::convertToDatabase($key, $value['value']);
+			 					$sql .= $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
+			 				}
 			 			} else {
 				 			// array value means an 'in' clause
 				 			
