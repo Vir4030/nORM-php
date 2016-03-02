@@ -560,6 +560,27 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Deletes the given owned instance.  It is removed from the backing store immediately.
+	 * 
+	 * @param String $keyName
+	 * @param DBEntity $ownedInstance
+	 */
+	protected function _deleteOwnedInstance($keyName, $ownedInstance) {
+		$key = DBForeignKey::get($keyName);
+		
+		if (!isset($this->_ownedObjectCache[$keyName]))
+			throw new Exception("Instance is not owned by this cache");
+		
+		$id = $ownedInstance->getId();
+		if (is_array($id)) {
+			throw new Exception("Array not supported for key in DBEntity::_deleteOwnedInstance");
+		} else {
+			unset($this->_ownedObjectCache[$keyName][$ownedInstance->getId()]);
+		}
+		$ownedInstance->delete();
+	}
+	
+	/**
 	 * Gets all owned instances for the given owning foreign key relationship.
 	 * 
 	 * @param string $keyName

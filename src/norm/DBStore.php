@@ -122,6 +122,14 @@ class DBStore {
 	 *  for a malformed selector
 	 */
 	private function queryPrimitive($selector = null, $orderBy = null, $maxRecords = 0, $offset = 0) {
+		$query = new DBQuery($this->_class, null, $selector, $orderBy);
+		$sql = $query->generateSQL($this->_connection);
+		if ($maxRecords || $offset)
+			$sql .= ' ' . $this->_connection->getPaginationAfterStatement($maxRecords, $offset);
+		return $this->_connection->query($sql);
+	}
+	
+	private function queryPrimitive_depricated($selector = null, $orderBy = null, $maxRecords = 0, $offset = 0) {
 		$class = $this->_class;
 		$sql = 'SELECT ';
 		if ($maxRecords || $offset)
@@ -132,7 +140,10 @@ class DBStore {
 			 if (is_array($selector)) {
 			 	foreach ($selector as $key => $value) {
 			 		$sql .= $sep;
-			 		if (is_array($value)) {
+			 		if (is_null($value)) {
+			 			$sql .= $key . ' Is Null';
+			 		}
+			 		else if (is_array($value)) {
 			 			if (isset($value['compare'])) {
 			 				$compare = $value['compare'];
 			 				if (isset($value['not']))
@@ -145,6 +156,10 @@ class DBStore {
 			 				} else {
 			 					$value = $class::convertToDatabase($key, $value['value']);
 			 					$sql .= $key . ' ' . $compare . ' ' . $this->_connection->quote($value, $class::requiresQuoting($key));
+			 				}
+			 			} else if (isset($value['not'])) {
+			 				if (is_null($value['value'])) {
+			 					
 			 				}
 			 			} else {
 				 			// array value means an 'in' clause
@@ -276,16 +291,6 @@ class DBStore {
 	}
 	
 	/**
-	 * Stores the profiling array, as wrapped around getAll() to trace the performance impact
-	 * of creating DBEntity objects.  This is only temporary, but will remain the last item in
-	 * the source code until it is removed.
-	 */
-	private $_profileArray = array(
-				'query' => 0,
-				'fetch' => 0
-	);
-	
-	/**
 	 * Gets all of the entities in this store.  This is essentially calling the following SQL:
 	 * 
 	 * SQL => SELECT * FROM {_tableName} ORDER BY {_orderBy}
@@ -306,15 +311,8 @@ class DBStore {
 			return $this->_cachedEntities;
 		}
 		
-		$this->_profileArray['query'] -= round(microtime(true) * 1000);
 		$rs = $this->queryPrimitive($selector, $orderBy);
-		$this->_profileArray['query'] += round(microtime(true) * 1000);
-		
-		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
-		$entities = $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
-		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
-		
-		return $entities;
+		return $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
 	}
 
 	public function getCached() {
@@ -366,16 +364,8 @@ class DBStore {
 	 *  an array of entities
 	 */
 	public function getPaginated($selector, $orderBy, $maxRecords, $offset = 0) {
-		$results = array();
-		$this->_profileArray['query'] -= round(microtime(true) * 1000);
 		$rs = $this->queryPrimitive($selector, $orderBy, $maxRecords, $offset);
-		$this->_profileArray['query'] += round(microtime(true) * 1000);
-		
-		$this->_profileArray['fetch'] -= round(microtime(true) * 1000);
-		$entities = $this->createEntitiesFromResultset($rs, ($orderBy == null));
-		$this->_profileArray['fetch'] += round(microtime(true) * 1000);
-		
-		return $entities;
+		return $this->createEntitiesFromResultset($rs, ($orderBy == null));
 	}
 	
 	/**

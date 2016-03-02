@@ -52,17 +52,15 @@ class DBQuery {
 				if ($count++ > 0) {
 					$sql .= ' AND ';
 				}
-				if (is_array($value) && isset($value['not']))
-					$sql .= 'Not ';
-				$sql .= $key;
 				if ($value instanceof DBQuery) {
-					$sql .= ' In (' . $value->generateSQL($conn) . ')';
+					$sql .= $key . ' In (' . $value->generateSQL($conn) . ')';
 				}
 				else if (is_array($value)) {
 		 			if (isset($value['compare'])) {
 		 				$compare = $value['compare'];
 		 				if (isset($value['not']))
 		 					$sql .= 'Not ';
+		 				$sql .= $key;
 		 				if ($compare == 'between') {
 		 					$low = $class::convertToDatabase($key, $value['low']);
 		 					$high = $class::convertToDatabase($key, $value['high']);
@@ -75,7 +73,7 @@ class DBQuery {
 		 			} else {
 			 			// array value means an 'in' clause
 			 			
-			 			$sql .= ' In (';
+			 			$sql .= $key . ' In (';
 			 			$count = 0;
 			 			foreach ($value AS $in_value) {
 			 				if ($count++) {
@@ -86,8 +84,11 @@ class DBQuery {
 			 			$sql .= ')';
 		 			}
 				}
+				else if (is_null($value)) {
+					$sql .= $key . ' Is Null';
+				}
 				else {
-					$sql .= ' = ' . $conn->quote($value, $class::requiresQuoting($key));
+					$sql .= $key . ' = ' . $conn->quote($value, $class::requiresQuoting($key));
 				}
 			}
 		} else if ($this->_selector) { // this code is somewhat untested
@@ -105,7 +106,6 @@ class DBQuery {
 			} else {
 				$sql .= $class::getIdField() . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($class::getIdField()));
 			}
-			$sql .= $key . ' = ' . $conn->quote($this->_selector, $class::requiresQuoting($key));
 		}
 		return $sql;
 	}
