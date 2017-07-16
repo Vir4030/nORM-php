@@ -36,6 +36,9 @@ class MySQLConnection extends DBConnection {
 	public function query($sql) {
 		$this->logQueryBegin($sql);
 		/* @var $rs mysqli_result */
+// 		echo('SQL: '.$sql."\r\n");
+		if (!$this->_db)
+			throw new Exception('cannot query when database is not connected');
 		if (($rs = mysqli_query($this->_db, $sql)) === false) {
 			$message = mysqli_error($this->_db) . ': ' . $sql;
 			$this->logQueryError($message);
@@ -170,11 +173,15 @@ class MySQLConnection extends DBConnection {
 	public function quote($unsafeValue, $requiresQuoting = true) {
 		if (is_array($unsafeValue))
 			throw new Exception('cannot quote an array');
-		$safeValue = mysqli_real_escape_string($this->_db, ''.$unsafeValue);
-		if ($requiresQuoting)
-			$safeValue = "'" . $safeValue . "'";
-		else if ((trim($safeValue) == '') || (strcasecmp($safeValue, 'null') == 0))
+		if ($unsafeValue == null)
 			$safeValue = 'null';
+		else {
+			$safeValue = mysqli_real_escape_string($this->_db, ''.$unsafeValue);
+			if ($requiresQuoting)
+				$safeValue = "'" . $safeValue . "'";
+			else if ((trim($safeValue) == '') || (strcasecmp($safeValue, 'null') == 0))
+				$safeValue = 'null';
+		}
 		return $safeValue;
 	}
 	

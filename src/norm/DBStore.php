@@ -50,6 +50,10 @@ class DBStore {
 	 */
 	private $_newEntities = array();
 	
+	private $_fieldList = null;
+	
+	private $_globalFilter = null;
+	
 	/**
 	 * cached database stores
 	 * @var array[DBStore]
@@ -101,6 +105,14 @@ class DBStore {
 		$this->_connection->disconnect();
 	}
 	
+	public function setFieldList($fieldList) {
+		$this->_fieldList = $fieldList;
+	}
+	
+	public function setGlobalFilter($globalFilter) {
+		$this->_globalFilter = $globalFilter;
+	}
+	
 	/**
 	 * Executes a query on the backing store for data described by the passed selector.
 	 * 
@@ -122,7 +134,9 @@ class DBStore {
 	 *  for a malformed selector
 	 */
 	private function queryPrimitive($selector = null, $orderBy = null, $maxRecords = 0, $offset = 0) {
-		$query = new DBQuery($this->_class, null, $selector, $orderBy);
+		if (is_array($selector) && $this->_globalFilter)
+			$selector = array_merge($selector, $this->_globalFilter);
+		$query = new DBQuery($this->_class, $this->_fieldList, $selector, $orderBy);
 		$sql = $query->generateSQL($this->_connection);
 		if ($maxRecords || $offset)
 			$sql .= ' ' . $this->_connection->getPaginationAfterStatement($maxRecords, $offset);
@@ -369,11 +383,15 @@ class DBStore {
 	}
 	
 	/**
-	 * Saves all of the cached entities back to the database.
+	 * Saves all of the cached entities back to the database.  It does this by calling save() on each DBEntity.
+	 * This ensures save-time behavior can be modified for a given class or type of entity.
 	 */
 	public function saveAll() {
 		foreach ($this->_cachedEntities AS $entity) {
 			$entity->save(); // seems awkward, but necessary to ensure foreign key values are always set, for example
+			
+			// after overriding save() in an entity, then coming here to ensure this method was called by saveAll()
+			// this no longer seems awkward.
 		}
 		foreach ($this->_newEntities AS $entity) {
 			$entity->save();

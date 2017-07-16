@@ -75,6 +75,13 @@ abstract class DBEntity {
 	protected static $_autoCacheNewEntities = false;
 	
 	/**
+	 * True if this entity should store references to owned data.
+	 * 
+	 * @var boolean
+	 */
+	protected static $_indexOwnedData = true;
+	
+	/**
 	 * This properties array holds the raw record data straight from the database.
 	 * 
 	 * @var array[mixed]
@@ -235,6 +242,10 @@ abstract class DBEntity {
 		return $this->_changedProperties;
 	}
 	
+	public function getOriginalValue($key) {
+		return isset($this->_properties[$key]) ? $this->_properties[$key] : null;
+	}
+	
 	/**
 	 * Marks this entity for deletion.
 	 */
@@ -308,6 +319,15 @@ abstract class DBEntity {
 		if (is_array($idValue) && (count($idValue) != count($idField)))
 			return false;
 		return true;
+	}
+	
+	/**
+	 * Disables the caching of owned data.  Useful when loading data related to this data
+	 * which is indexed separately from the object hierarchy.
+	 */
+	public static function disableOwnershipCache() {
+		$class = get_called_class();
+		$class::$_indexOwnedData = false;
 	}
 	
 	/**
@@ -398,14 +418,19 @@ abstract class DBEntity {
 	}
 	
 	/**
-	 * Saves this object to the backing database.
+	 * Saves this object to the backing database.  This method is always called by the backing store
+	 * to save the data, and can be used by child classes to modify this behavior.
+	 * 
+	 * @return true if this record was updated
 	 */
 	public function save() {
+		$recordUpdated = false;
 		if (count($this->_changedProperties) > 0) {
 			static::getStore()->save($this);
 			foreach ($this->_changedProperties AS $key => $value)
 				$this->_properties[$key] = $value;
 			$this->_changedProperties = array();
+			$recordUpdated = true;
 		}
 		foreach ($this->_ownedObjectCache AS $keyName => $ownedObjectArray) {
 			/* @var $key DBForeignKey */
@@ -425,6 +450,7 @@ abstract class DBEntity {
 				}
 			}
 		}
+		return $recordUpdated;
 	}
 	
 	public function getOneToManyData($class, $foreignField) {
@@ -549,14 +575,26 @@ abstract class DBEntity {
 		if (!is_array($foreignColumns))
 			$ownedInstance->__set($foreignColumns, $this->getId());
 		
-		// store in cache
-		$this->_setupOwnedInstanceCache($keyName);
-		$id = $ownedInstance->getId();
-		if (is_array($id) || !$ownedInstance->getId()) {
-			$this->_ownedObjectCache[$keyName][] = $ownedInstance;
-		} else {
-			$this->_ownedObjectCache[$keyName][$ownedInstance->getId()] = $ownedInstance;
+		$class = get_class($this);
+		if ($class::$_indexOwnedData) {
+			// store in cache
+			$this->_setupOwnedInstanceCache($keyName);
+			$id = $ownedInstance->getId();
+			if (is_array($id) || !$ownedInstance->getId()) {
+				$this->_ownedObjectCache[$keyName][] = $ownedInstance;
+			} else {
+				$this->_ownedObjectCache[$keyName][$ownedInstance->getId()] = $ownedInstance;
+			}
 		}
+	}
+	
+	/**
+	 * Removes all of the owned instances from this object for the given key.
+	 * 
+	 * @param String $keyName
+	 */
+	protected function _removeOwnedInstances($keyName) {
+		$this->_ownedObjectCache[$keyName] = array();
 	}
 	
 	/**
@@ -717,6 +755,34 @@ abstract class DBEntity {
 				$parentObject = static::get($ownedObject->__get($foreignColumns));
 			} catch (Exception $e) {
 				throw new Exception('foreign key ' . $key->getName() . ' defined in ' . $key->getForeignEntityClass() . ' has an invalid foreign column "' . $foreignColumns . '": '.$e->getMessage());
+			}
+			if ($parentObject) {
+				$parentObject->_addOwnedInstance($key->getName(), $ownedObject);
+			}
+		}
+	}
+	
+	/**
+	 * Reassigns all owned instances for the given key so child-parent relationships are all created.
+	 * 
+	 * @param String $keyName
+	 */
+	public static function cleanupOwnedInstances($keyName) {
+		$key = self::$_ownedData[$keyName];
+		foreach (self::getCached() AS $parentObject)
+			$parentObject->_removeOwnedInstances($keyName);
+		
+		if ($key->getPrimaryEntityClass() != get_called_class())
+			throw new Exception('key '.$keyName.' is not a foreign key for primary entity '.get_called_class());
+		
+		$ownedClass = $key->getForeignEntityClass();
+		$ownedData = $ownedClass::getCached();
+		/* @var $ownedObject DBEntity */
+		foreach ($ownedData AS $ownedObject) {
+			try {
+				$parentObject = static::get($ownedObject->__get($key->getForeignColumns()));
+			} catch (Exception $e) {
+				throw new Exception('foreign key ' . $key->getName() . ' defined in ' . $key->getForeignEntityClass() . ' has an invalid foreign column "' . $key->getForeignColumns() . '": '.$e->getMessage());
 			}
 			if ($parentObject) {
 				$parentObject->_addOwnedInstance($key->getName(), $ownedObject);
