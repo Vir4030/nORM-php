@@ -305,6 +305,27 @@ class DBStore {
 	}
 	
 	/**
+	 * Refreshes the given entity from the database.
+	 * 
+	 * @param DBEntity $entity
+	 * @throws Exception
+	 */
+	public function refresh($entity) {
+		$class = $this->_class;
+		if (!$entity->getLocalUniqueIdentifier())
+			throw new Exception("cannot refresh entity which doesn't have an ID value");
+	
+		$rs = $this->queryPrimitive($entity->getId());
+		$row = $this->_connection->fetch_assoc($rs);
+		if ($row) {
+			$entity->clearDirty();
+			$entity->setProperties($row);
+		} else {
+			$entity->markForDeletion();
+		}
+	}
+	
+	/**
 	 * Gets all of the entities in this store.  This is essentially calling the following SQL:
 	 * 
 	 * SQL => SELECT * FROM {_tableName} ORDER BY {_orderBy}
@@ -381,6 +402,16 @@ class DBStore {
 		$rs = $this->queryPrimitive($selector, $orderBy, $maxRecords, $offset);
 		return $this->createEntitiesFromResultset($rs, ($orderBy == null));
 	}
+
+	/**
+	 * Refreshes all of the cached entities from the database.
+	 */
+	public function refreshAll() {
+		// TODO: Optimize this for only one query
+		foreach ($this->_cachedEntities AS $entity) {
+			$entity->refresh(false); // seems awkward, but it's the pattern used in saveAll()
+		}
+	}
 	
 	/**
 	 * Saves all of the cached entities back to the database.  It does this by calling save() on each DBEntity.
@@ -399,6 +430,7 @@ class DBStore {
 		}
 		$this->_newEntities = array();
 	}
+	
 	
 	/**
 	 * Saves the given entity back to the database.
