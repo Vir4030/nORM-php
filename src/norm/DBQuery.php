@@ -88,7 +88,7 @@ class DBQuery {
 					$sql .= $key . ' Is Null';
 				}
 				else {
-					$sql .= $key . ' = ' . $conn->quote($value, $class::requiresQuoting($key));
+					$sql .= $key . ' = ' . $conn->quote($class::convertToDatabase($key, $value), $class::requiresQuoting($key));
 				}
 			}
 		} else if ($this->_selector) { // this code is somewhat untested

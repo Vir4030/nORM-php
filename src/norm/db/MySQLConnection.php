@@ -29,7 +29,7 @@ class MySQLConnection extends DBConnection {
 	
 	public function disconnect() {
 		if ($this->_db)
-			$this->_db->disconnect();
+			$this->_db->close();
 		$this->_db = null;
 	}
 	
