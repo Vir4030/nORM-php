@@ -211,6 +211,29 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Sets the properties array directly.  Use with care.
+	 * 
+	 * @param array $properties
+	 */
+	public function setProperties($properties) {
+		echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId()."\n");
+		foreach ($properties AS $key => $value) {
+			if (!isset($this->_properties[$key])) {
+				if ($value !== null)
+					echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." added as ".$value."\n");
+			} else if ($value != $this->_properties[$key]) {
+				echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." changed from ".$this->_properties[$key]." to ".$value."\n");
+			}
+		}
+		foreach ($this->_properties AS $key => $value) {
+			if (!isset($properties[$key]) && ($value !== null)) {
+				echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." removed from ".$value."\n");
+			}
+		}
+		$this->_properties = $properties;
+	}
+	
+	/**
 	 * Checks to see if a value has been changed in this object.  In other words, this method
 	 * returns true if there is unsaved data.
 	 * 
@@ -399,15 +422,31 @@ abstract class DBEntity {
 		return get_class($this) . '-' . $this->getLocalUniqueIdentifier();
 	}
 	
+	/**
+	 * Deletes this entity immediately in the backing store, as well as all owned entities.
+	 */
 	public function delete() {
-		foreach ( $this->_ownedObjectCache as $keyName => $ownedObjectArray ) {
+		foreach ($this->_ownedObjectCache as $keyName => $ownedObjectArray) {
 			/* @var $ownedEntity DBEntity */
-			foreach ( $ownedObjectArray as $ownedEntity ) {
+			foreach ($ownedObjectArray as $ownedEntity)
 				$ownedEntity->delete();
-			}
 		}
 		static::getStore()->delete($this);
-		return;
+	}
+	
+	/**
+	 * Refreshes this entity from the backing store, as well as all owned entities.  Does not search for
+	 * new owned entities not already loaded.
+	 */
+	public function refresh($refreshedOwned = true) {
+		if ($refreshedOwned) {
+			foreach ($this->_ownedObjectCache AS $keyName => $ownedObjectArray) {
+				/* @var $ownedEntity DBEntity */
+				foreach ($ownedObjectArray as $ownedEntity)
+					$ownedEntity->refresh();
+			}
+		}
+		static::getStore()->refresh($this);
 	}
 	
 	/**
@@ -415,6 +454,17 @@ abstract class DBEntity {
 	 */
 	public static function saveAll() {
 		static::getStore()->saveAll();
+	}
+	
+	public static function refreshAll() {
+		foreach (self::$_ownedData AS $name => $foreignKey) {
+			if (get_called_class() == $foreignKey->getPrimaryEntityClass()) {
+				/* @var $class DBEntity */
+				$class = $foreignKey->getForeignEntityClass();
+				$class::refreshAll();
+			}
+		}
+		static::getStore()->refreshAll();
 	}
 	
 	/**
@@ -527,7 +577,8 @@ abstract class DBEntity {
 	}
 	
 	/**
-	 * Gets all records for this class.
+	 * Gets all records for this class.  If a selector is provided, then these records are
+	 * loaded from the database.
 	 * 
 	 * @return array[DBEntity]
 	 */
@@ -587,6 +638,38 @@ abstract class DBEntity {
 			}
 		}
 	}
+
+	/**
+	 * Uncaches the given owned instance.  It will not be marked for deletion.
+	 * 
+	 * @param String $keyName
+	 * @param DBEntity $ownedInstance
+	 */
+	protected function _uncacheOwnedInstance($keyName, $ownedInstance) {
+		$key = DBForeignKey::get($keyName);
+		
+		if (!isset($this->_ownedObjectCache[$keyName]))
+			throw new Exception("Instance is not owned by this cache");
+		
+		$id = $ownedInstance->getId();
+		if (is_array($id)) {
+			throw new Exception("Array not supported for key in DBEntity::_deleteOwnedInstance");
+		} else {
+			unset($this->_ownedObjectCache[$keyName][$ownedInstance->getId()]);
+		}
+		$ownedInstance->markForDeletion();
+	}
+	
+	/**
+	 * Removes the given owned instance.  It will be marked for deletion.
+	 * 
+	 * @param String $keyName
+	 * @param DBEntity $ownedInstance
+	 */
+	protected function _removeOwnedInstance($keyName, $ownedInstance) {
+		$this->_uncacheOwnedInstance($keyName, $ownedInstance);
+		$ownedInstance->markForDeletion();
+	}
 	
 	/**
 	 * Removes all of the owned instances from this object for the given key.
@@ -604,7 +687,7 @@ abstract class DBEntity {
 	 * @param DBEntity $ownedInstance
 	 */
 	protected function _deleteOwnedInstance($keyName, $ownedInstance) {
-		$key = DBForeignKey::get($keyName);
+			$key = DBForeignKey::get($keyName);
 		
 		if (!isset($this->_ownedObjectCache[$keyName]))
 			throw new Exception("Instance is not owned by this cache");
@@ -751,6 +834,9 @@ abstract class DBEntity {
 		}
 		/* @var $ownedObject DBEntity */
 		foreach ($ownedData AS $ownedObject) {
+			$foreignValue = $ownedObject->__get($foreignColumns);
+			if (!$foreignValue)
+				continue;
 			try {
 				$parentObject = static::get($ownedObject->__get($foreignColumns));
 			} catch (Exception $e) {
@@ -818,6 +904,10 @@ abstract class DBEntity {
 		/* @var $ownedClass DBEntity */
 		$ownedClass::getAll($subSelector);
 		$ownedClass::loadForeign($subForeignArray, $subSelector, $filter);
+	}
+	
+	public function clearOwnedCache($foreignKey) {
+		unset($this->_ownedObjectCache[$foreignKey]);
 	}
 	
 	public static function loadForeign($foreignArray, $selector = false, $filter = array()) {
