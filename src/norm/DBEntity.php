@@ -564,7 +564,8 @@ abstract class DBEntity {
 	}
 	
 	/**
-	 * Gets one entity based on a selector.
+	 * Gets one entity based on a selector.  This method returns null if the entity
+	 * is not found.  It throws an exception if more than one entity matches the $selector.
 	 * 
 	 * @param mixed $selector
 	 * @return DBEntity
