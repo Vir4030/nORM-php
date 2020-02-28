@@ -173,13 +173,13 @@ class MySQLConnection extends DBConnection {
 	public function quote($unsafeValue, $requiresQuoting = true) {
 		if (is_array($unsafeValue))
 			throw new Exception('cannot quote an array');
-		if ($unsafeValue == null)
+		if ($unsafeValue === null)
 			$safeValue = 'null';
 		else {
 			$safeValue = mysqli_real_escape_string($this->_db, ''.$unsafeValue);
 			if ($requiresQuoting)
 				$safeValue = "'" . $safeValue . "'";
-			else if ((trim($safeValue) == '') || (strcasecmp($safeValue, 'null') == 0))
+			else if ((trim($safeValue) === '') || (strcasecmp($safeValue, 'null') == 0))
 				$safeValue = 'null';
 		}
 		return $safeValue;
