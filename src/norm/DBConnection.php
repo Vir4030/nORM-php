@@ -396,17 +396,10 @@ abstract class DBConnection {
 		$this->_currentQueryLog->error($message);
 	}
 	
-	public function dumpQueryLog($html = false, $force = false) {
-		if (!DBConnection::$_queryLogEnabled) return;
-		if (!$force && error_get_last()) {
-			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 383)\n");
-		}
-		
-		$br = $html ? '<br>' : "\n";
-		if ($html)
-			echo('<b class="large">total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms</b>');
-		else
-			echo('total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms');
+	public function dumpTextQueryLog() {
+
+		$br = "\n";
+		echo('total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms');
 		echo($br . '== Query Log ==' . $br);
 		foreach ($this->getQueryLog() AS $queryLog) {
 			if ($queryLog->isCompleted()) {
@@ -415,5 +408,34 @@ abstract class DBConnection {
 				echo($queryLog->getQueryString() . $br . ' - error: ' . $queryLog->getErrorMessage());
 			echo($br);
 		}
+		
+	}
+	
+	public function dumpHtmlQueryLog() {
+		echo('<div class="log">');
+		echo('<h4>Query Log</h4>');
+		echo('<div class="log-summary">total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms</div>');
+		foreach ($this->getQueryLog() AS $queryLog) {
+			echo('<div class="log-entry">');
+			echo('<div class="log-key">'.$queryLog->getQueryString().'</div>');
+			if ($queryLog->isCompleted()) {
+				echo('<div class="log-value">' . $queryLog->getRowsAffected() . ' rows affected in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms</div>');
+			} else
+				echo('<div class="log-value error">error: ' . $queryLog->getErrorMessage().'</div>');
+			echo('</div>');
+		}
+		echo('</div>');
+	}
+	
+	public function dumpQueryLog($html = false, $force = false) {
+		if (!DBConnection::$_queryLogEnabled) return;
+		if (!$force && error_get_last()) {
+			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 383)\n");
+		}
+		
+		if ($html)
+			$this->dumpHtmlQueryLog();
+		else
+			$this->dumpTextQueryLog();
 	}
 }
