@@ -350,6 +350,24 @@ class DBStore {
 		return $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
 	}
 
+	/**
+	 * Gets the first number of entities from the database matching the given criteria.
+	 * Ignores cached data, but the engine still merges if a record is re-selected.
+	 * 
+	 * @param string $selector the query selector
+	 * @param string $orderBy field or array of fields by which to order
+	 * @param int $maxRecords zero will get them all
+	 * @param int $offset number of records to skip in sequence, for paging
+	 * 
+	 * @return array[DBEntity] the entities
+	 */
+	public function getFirst($selector = null, $orderBy = null, $maxRecords, $offset = 0) {
+		$results = array();
+		
+		$rs = $this->queryPrimitive($selector, $orderBy, $maxRecords, $offset);
+		return $this->createEntitiesFromResultset($rs);
+	}
+	
 	public function getCached() {
 		return $this->_cachedEntities;
 	}
