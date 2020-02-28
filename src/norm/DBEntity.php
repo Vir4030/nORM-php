@@ -800,7 +800,7 @@ abstract class DBEntity {
 	 * @param mixed $selector
 	 * @param unknown $subForeignArray
 	 */
-	private static function _loadOwnedData($key, $selector, $subForeignArray = array(), $filter = array()) {
+	private static function _loadOwnedData($key, $selector, $subForeignArray = array(), $subFilter = array()) {
 		$foreignColumns = $key->getForeignColumns();
 		$primaryColumns = $key->getPrimaryColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
@@ -821,17 +821,22 @@ abstract class DBEntity {
 			$subSelector = null;
 		else
 			$subSelector = array($foreignColumns => $selector);
-		if (count($filter) > 0) {
-			if (is_array($subSelector))
-				$subSelector = array_merge($subSelector, $filter);
-			else
-				$subSelector = $filter;
+		if (count($subFilter) > 0) {
+			if (is_array($subSelector)) {
+				foreach ($subFilter AS $field => $value) {
+					$foreignClass = $key->getForeignEntityClass();
+					if ($foreignClass::hasField($field))
+						$subSelector[$field] = $value;
+				}
+			} else {
+				$subSelector = $subFilter;
+			}
 		}
 		$ownedClass = $key->getForeignEntityClass();
 		/* @var $ownedClass DBEntity */
 		$ownedData = $ownedClass::getAll($subSelector);
 		if (count($subForeignArray) > 0) {
-			$ownedClass::loadForeign($subForeignArray, $subSelector);
+			$ownedClass::loadForeign($subForeignArray, $subSelector, $subFilter);
 		}
 		/* @var $ownedObject DBEntity */
 		foreach ($ownedData AS $ownedObject) {
@@ -883,7 +888,7 @@ abstract class DBEntity {
 	 * @param mixed $selector
 	 * @param unknown $subForeignArray
 	 */
-	private static function _loadForeignData($key, $selector, $subForeignArray, $filter = array()) {
+	private static function _loadForeignData($key, $selector, $subForeignArray, $subFilter = array()) {
 		$primaryClass = $key->getPrimaryEntityClass();
 		$primaryColumns = $key->getPrimaryColumns();
 		$foreignColumns = $key->getForeignColumns();
@@ -895,16 +900,21 @@ abstract class DBEntity {
 		if (is_array($primaryColumns))
 			$primaryColumns = $primaryColumns[0];
 		$subSelector = array($primaryColumns => new DBQuery($key->getForeignEntityClass(), $foreignColumns, $selector));
-		if (count($filter) > 0) {
-			if (is_array($subSelector))
-				$subSelector = array_merge($subSelector, $filter);
-			else
-				$subSelector = $filter;
+		if (count($subFilter) > 0) {
+			if (is_array($subSelector)) {
+				foreach ($subFilter AS $field => $value) {
+					$foreignClass = $key->getForeignEntityClass();
+					if ($foreignClass::hasField($field))
+						$subSelector[$field] = $value;
+				}
+			} else {
+				$subSelector = $subFilter;
+			}
 		}
 		$ownedClass = $key->getPrimaryEntityClass();
 		/* @var $ownedClass DBEntity */
 		$ownedClass::getAll($subSelector);
-		$ownedClass::loadForeign($subForeignArray, $subSelector, $filter);
+		$ownedClass::loadForeign($subForeignArray, $subSelector, $subFilter);
 	}
 	
 	public function clearOwnedCache($foreignKey) {
@@ -925,17 +935,20 @@ abstract class DBEntity {
 				if (!is_array($subForeignArray))
 					$subForeignArray = array($subForeignArray);
 			}
+			$subForeignFilter = array();
+			if (isset($filter[$keyName]))
+				$subForeignFilter = $filter[$keyName];
 			$key = DBForeignKey::get($keyName);
 			if (get_called_class() == $key->getPrimaryEntityClass()) {
 				if (!isset(static::$_ownedData[$keyName]))
 					throw new Exception('did not declare owned data in foreign key definition '.$keyName);
-				static::_loadOwnedData(static::$_ownedData[$keyName], $selector, $subForeignArray, $filter);
+				static::_loadOwnedData(static::$_ownedData[$keyName], $selector, $subForeignArray, $subForeignFilter);
 			}
 			else if (get_called_class() == $key->getForeignEntityClass()) {
-				static::_loadForeignData(static::$_foreignKeys[$keyName], $selector, $subForeignArray, $filter);
+				static::_loadForeignData(static::$_foreignKeys[$keyName], $selector, $subForeignArray, $subForeignFilter);
 			}
 			else {
-				throw new Exception('Foreign data undefined for key ' . $keyName . ' and class ' . get_called_class());
+				throw new Exception('Foreign data redefined for key ' . $keyName . ' and class ' . get_called_class());
 			}
 		}
 	}
@@ -977,6 +990,11 @@ abstract class DBEntity {
 	public static function declareField($name, $field) {
 		$className = get_called_class();
 		self::$_fields[$className][$name] = $field;
+	}
+	
+	public static function hasField($name) {
+		$className = get_called_class();
+		return isset(self::$_fields[$className][$name]);
 	}
 	
 	public static function getFields() {
