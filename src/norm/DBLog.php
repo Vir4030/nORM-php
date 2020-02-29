@@ -28,6 +28,13 @@ class DBLog {
 	private $_completeTime = 0.0;
 	
 	/**
+	 * Returns true if completed.
+	 * 
+	 * @var boolean
+	 */
+	private $_isComplete = false;
+	
+	/**
 	 * The number of rows affected or returned.
 	 * @var int
 	 */
@@ -77,6 +84,7 @@ class DBLog {
 	 * as the query is completed.
 	 */
 	public function end() {
+		$this->_isComplete = true;
 		$this->_completeTime = microtime(true);
 		if ($this->_splitTime == 0.0)
 			$this->_splitTime = $this->_completeTime;
@@ -99,7 +107,7 @@ class DBLog {
 	 * @return boolean true if this query has completed
 	 */
 	public function isCompleted() {
-		return $this->_completeTime > 0.0;
+		return $this->_isComplete;
 	}
 	
 	/**
@@ -138,7 +146,7 @@ class DBLog {
 	 * @return string the error message
 	 */
 	public function getErrorMessage() {
-		return $this->_errorMessage;
+		return $this->_errorMessage ? $this->_errorMessage : 'No message. Possible unclosed resultset.';
 	}
 	
 	/**

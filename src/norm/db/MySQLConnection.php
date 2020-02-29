@@ -55,7 +55,7 @@ class MySQLConnection extends DBConnection {
 		$rs = $this->query($sql);
 		if (($row = mysqli_fetch_array($rs, MYSQLI_NUM)) !== null)
 			$field = $row[0];
-		mysqli_free_result($rs);
+		$this->free_result($rs);
 		return $field;
 	}
 	

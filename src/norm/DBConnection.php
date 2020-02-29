@@ -421,7 +421,7 @@ abstract class DBConnection {
 			if ($queryLog->isCompleted()) {
 				echo('<div class="log-value">' . $queryLog->getRowsAffected() . ' rows affected in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms</div>');
 			} else
-				echo('<div class="log-value error">error: ' . $queryLog->getErrorMessage().'</div>');
+				echo('<div class="log-error">ERROR: ' . $queryLog->getErrorMessage().'</div>');
 			echo('</div>');
 		}
 		echo('</div>');
