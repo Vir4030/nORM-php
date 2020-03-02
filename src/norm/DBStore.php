@@ -271,10 +271,19 @@ class DBStore {
 			} else {
 				$entities[] = $entity;
 			}
-			$this->_cachedEntities[$idKey] = $entity;
+			$this->addToCache($entity);
 		}
 		$this->_connection->free_result($rs);
 		return $entities;
+	}
+	
+	/**
+	 * Adds the given entity to the cache.  Almost an internal function, but apparently there's some non-DB generation that requires it.
+	 * 
+	 * @param DBEntity $entity
+	 */
+	public function addToCache($entity) {
+		$this->_cachedEntities[$entity->getLocalUniqueIdentifier()] = $entity;
 	}
 	
 	/**
@@ -444,7 +453,7 @@ class DBStore {
 		}
 		foreach ($this->_newEntities AS $entity) {
 			$entity->save();
-			$this->_cachedEntities[$entity->getLocalUniqueIdentifier()] = $entity;
+			$this->addToCache($entity);
 		}
 		$this->_newEntities = array();
 	}
@@ -498,7 +507,7 @@ class DBStore {
 		$id = $this->_connection->insert($class, $entity->getDirtyProperties());
 		if ($id && ($id !== TRUE)) {
 			$entity->setId($id);
-			$this->_cachedEntities[$entity->getLocalUniqueIdentifier()] = $entity;
+			$this->addToCache($entity);
 		}
 	}
 	
