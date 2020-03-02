@@ -430,12 +430,15 @@ abstract class DBConnection {
 	public function dumpQueryLog($html = false, $force = false) {
 		if (!DBConnection::$_queryLogEnabled) return;
 		if (!$force && error_get_last()) {
-			die("Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line 383)\n");
+			if ($html)
+				echo('<h4>Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line '.__LINE__.')');
+			else
+				echo('Query Log Suppressed due to Error (norm/DBConnection::dumpQueryLog, line '.__LINE__.")\n");
+		} else {
+			if ($html)
+				$this->dumpHtmlQueryLog();
+			else
+				$this->dumpTextQueryLog();
 		}
-		
-		if ($html)
-			$this->dumpHtmlQueryLog();
-		else
-			$this->dumpTextQueryLog();
 	}
 }
