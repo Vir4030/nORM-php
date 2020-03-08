@@ -950,6 +950,11 @@ abstract class DBEntity {
 			else {
 				throw new Exception('Foreign data redefined for key ' . $keyName . ' and class ' . get_called_class());
 			}
+			
+			// by creating an empty array in the cache, this indicates that the data has been loaded
+			foreach (self::getCached() AS $entity)
+				if (!isset($entity->_ownedObjectCache[$keyName]))
+					$entity->_ownedObjectCache[$keyName] = array();
 		}
 	}
 
