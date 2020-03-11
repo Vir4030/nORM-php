@@ -578,6 +578,24 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Gets the first specified number of entities based on the selector, in the given order, skipping the given number.
+	 * If the max records is 1 or unspecified, then this returns the one result or null.
+	 * Otherwise, this returns an array of results.
+	 * 
+	 * @param mixed $selector
+	 * @param string|array[string] $orderedBy
+	 * @param int $maxRecords
+	 * @param int $offset
+	 * @return DBEntity|array[DBEntity]
+	 */
+	public static function getFirst($selector = null, $orderedBy = null, $maxRecords = 1, $offset = 0) {
+		$results = static::getStore()->getFirst($selector, $orderedBy, $maxRecords, $offset);
+		if ($maxRecords == 1)
+			return isset($results[0]) ? $results[0] : null;
+		return $results;
+	}
+	
+	/**
 	 * Gets all records for this class.  If a selector is provided, then these records are
 	 * loaded from the database.
 	 * 
