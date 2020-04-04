@@ -76,7 +76,8 @@ class DBField {
 				throw new Exception('invalid PHP date value (expecting numeric time) - ' . $outValue);
 			$outValue = gmdate($this->getDateFormat(), $outValue);
 		}
-		return ''.$outValue;
+		
+		return ($this->requiresQuoting() ? ''.$outValue : $outValue);
 	}
 	
 	public function convertFromDatabase($inValue) {

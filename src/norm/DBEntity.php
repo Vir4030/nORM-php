@@ -503,6 +503,48 @@ abstract class DBEntity {
 		return $recordUpdated;
 	}
 	
+	const KEY_PROPERTIES = '_properties';
+	const KEY_CHILDREN = '_children';
+	
+	private function getJsonArray() {
+		$array = array();
+		if ($this->getId())
+			$array[$this->getIdField()] = $this->getId();
+		foreach ($this->_properties AS $key => $value) {
+			if (isset($this->_changedProperties[$key]))
+				$value = $this->_changedProperties[$key];
+			if ($value !== '')
+				$array[$key] = $value;
+		}
+		foreach ($this->_changedProperties AS $key => $value) {
+			if (isset($this->_properties[$key]))
+				continue;
+			if ($value !== '')
+				$array[$key] = $value;
+		}
+		
+		$childrenArray = array();
+		foreach ($this->_ownedObjectCache AS $foreignKey => $ownedObjects) {
+			$ownedArray = array();
+			/* @var $object DBEntity */
+			foreach ($ownedObjects AS $id => $object) {
+				$ownedArray[$id] = $object->getJsonArray();
+			}
+			$childrenArray[$foreignKey] = $ownedArray;
+		}
+		
+		if (count($childrenArray))
+			$array[self::KEY_CHILDREN] = $childrenArray;
+		return $array;
+	}
+	
+	/**
+	 * Exports this object into a JSON record.
+	 */
+	public function saveToJson() {
+		return json_encode($this->getJsonArray());
+	}
+	
 	public function getOneToManyData($class, $foreignField) {
 		/* @var $store DBStore */
 		$store = $class::getStore();

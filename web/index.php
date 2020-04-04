@@ -11,6 +11,8 @@ Animal::loadForeign(
 		AnimalInventory::FK_ANIMAL_ANIMAL_ID,
 		AnimalProperty::FK_ANIMAL_ANIMAL_ID => AnimalProperty::FK_ANIMAL_PROPERTY_TYPE_PROPERTY_TYPE_ID));
 
+$animalInventories = array();
+
 /* @var $animal Animal */
 foreach ($animals as $id => $animal) {
 	echo($id.': '.$animal->getName().' ('.$animal->getLegs().') '.(isset($animalInventories[$id]) ? ' with ' . $animalInventories[$id]->getQoh() : '')."<br>");

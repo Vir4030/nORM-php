@@ -260,7 +260,7 @@ class DBStore {
 			$entity = new $class($row);
 			$idKey = $entity->getLocalUniqueIdentifier();
 			if ($idKey == null)
-				throw new Exception('id key is not properly configured for class ' . $this->_class . ' (id = '.$entity->getId().')');
+				throw new Exception('id key is excluded or not properly configured for class ' . $this->_class . ' (id = '.$entity->getId().')');
 			if (isset($this->_cachedEntities[$idKey]))
 				$entity = $this->_cachedEntities[$idKey];
 			if ($indexed) {
