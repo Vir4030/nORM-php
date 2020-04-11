@@ -505,11 +505,15 @@ abstract class DBEntity {
 	
 	const KEY_PROPERTIES = '_properties';
 	const KEY_CHILDREN = '_children';
+	const KEY_CLASS = '_class';
 	
 	private function getJsonArray() {
 		$array = array();
 		if ($this->getId())
 			$array[$this->getIdField()] = $this->getId();
+		
+		$array[self::KEY_CLASS] = get_class($this);
+		
 		foreach ($this->_properties AS $key => $value) {
 			if (isset($this->_changedProperties[$key]))
 				$value = $this->_changedProperties[$key];
@@ -543,6 +547,39 @@ abstract class DBEntity {
 	 */
 	public function saveToJson() {
 		return json_encode($this->getJsonArray());
+	}
+	
+	public function loadFromJsonArray($array) {
+		if (isset($array[$this->getIdField()]))
+			$this->setId($array[$this->getIdField()]);
+		
+		/* @var $field DBField */
+		foreach ($this->getFields() AS $key => $field) {
+			if (isset($array[$key]))
+				$this->__set($key, $array[$key]);
+		}
+		
+		if (isset($array[self::KEY_CHILDREN])) {
+			foreach ($array[self::KEY_CHILDREN] AS $keyname => $children) {
+				
+				foreach ($children AS $childArray) {
+					$className = $childArray[self::KEY_CLASS];
+					/* @var $child DBEntity */
+					$child = $className::CREATE();
+					$child->loadFromJsonArray($childArray);
+					$foreignKey = $child::_getForeignKey($keyname);
+					$this->_addOwnedInstance($foreignKey->getName(), $child);
+				}
+			}
+		}
+	}
+	
+	public function loadFromJson($json) {
+		$array = json_decode($json);
+		echo('<pre>');
+		var_dump($array);
+		die();
+		$this->loadFromJsonArray();
 	}
 	
 	public function getOneToManyData($class, $foreignField) {
@@ -1005,7 +1042,7 @@ abstract class DBEntity {
 				static::_loadOwnedData(static::$_ownedData[$keyName], $selector, $subForeignArray, $subForeignFilter);
 			}
 			else if (get_called_class() == $key->getForeignEntityClass()) {
-				static::_loadForeignData(static::$_foreignKeys[$keyName], $selector, $subForeignArray, $subForeignFilter);
+				static::_loadForeignData(DBEntity::$_foreignKeys[$keyName], $selector, $subForeignArray, $subForeignFilter);
 			}
 			else {
 				throw new Exception('Foreign data redefined for key ' . $keyName . ' and class ' . get_called_class());
@@ -1023,11 +1060,16 @@ abstract class DBEntity {
 	 * @param DBForeignKey $foreignKey
 	 */
 	private static function _registerForeignKey($foreignKey) {
-		static::$_foreignKeys[$foreignKey->getName()] = $foreignKey;
+		if (isset(DBEntity::$_foreignKeys[$foreignKey->getName()])) {
+			$existingKey = DBEntity::$_foreignKeys[$foreignKey->getName()];
+			throw new Exception('foreign key already defined for '.$foreignKey->getname().' in '.$existingKey->getForeignEntityClass());
+		}
+		
+		DBEntity::$_foreignKeys[$foreignKey->getName()] = $foreignKey;
 	}
 	
 	private static function _getForeignKey($keyName) {
-		return static::$_foreignKeys[$keyName];
+		return DBEntity::$_foreignKeys[$keyName];
 	}
 	
 	/**
