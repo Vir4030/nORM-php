@@ -113,6 +113,12 @@ class DBStore {
 		$this->_globalFilter = $globalFilter;
 	}
 	
+	public function applyGlobalFilter($selector) {
+	  if (is_array($selector) && $this->_globalFilter)
+	    $selector = array_merge($selector, $this->_globalFilter);
+	  return $selector;
+	}
+	
 	/**
 	 * Executes a query on the backing store for data described by the passed selector.
 	 * 
@@ -134,8 +140,7 @@ class DBStore {
 	 *  for a malformed selector
 	 */
 	private function queryPrimitive($selector = null, $orderBy = null, $maxRecords = 0, $offset = 0) {
-		if (is_array($selector) && $this->_globalFilter)
-			$selector = array_merge($selector, $this->_globalFilter);
+	  $selector = $this->applyGlobalFilter($selector);
 		$query = new DBQuery($this->_class, $this->_fieldList, $selector, $orderBy);
 		$sql = $query->generateSQL($this->_connection);
 		if ($maxRecords || $offset)

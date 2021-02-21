@@ -918,6 +918,7 @@ abstract class DBEntity {
 			$subSelector = null;
 		else
 			$subSelector = array($foreignColumns => $selector);
+		
 		if (count($subFilter) > 0) {
 			if (is_array($subSelector)) {
 				foreach ($subFilter AS $field => $value) {
@@ -930,9 +931,14 @@ abstract class DBEntity {
 			}
 		}
 		$ownedClass = $key->getForeignEntityClass();
+		
+		/* @var $store DBStore */
+		$store = $ownedClass::getStore();
+		$subSelector = $store->applyGlobalFilter($subSelector);
+		
 		/* @var $ownedClass DBEntity */
 		$ownedData = $ownedClass::getAll($subSelector);
-		if (count($subForeignArray) > 0) {
+		if ((count($subForeignArray) > 0) && (count($ownedData) > 0)) {
 			$ownedClass::loadForeign($subForeignArray, $subSelector, $subFilter);
 		}
 		/* @var $ownedObject DBEntity */
@@ -1009,9 +1015,10 @@ abstract class DBEntity {
 			}
 		}
 		$ownedClass = $key->getPrimaryEntityClass();
+		
 		/* @var $ownedClass DBEntity */
-		$ownedClass::getAll($subSelector);
-		$ownedClass::loadForeign($subForeignArray, $subSelector, $subFilter);
+		if (count($ownedClass::getAll($subSelector)) > 0)
+		  $ownedClass::loadForeign($subForeignArray, $subSelector, $subFilter);
 	}
 	
 	public function clearOwnedCache($foreignKey) {

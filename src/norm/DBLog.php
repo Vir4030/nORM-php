@@ -123,7 +123,7 @@ class DBLog {
 	 * Gets the complete time of execution for this query.  This includes all time spent process resultset
 	 * records into objects.
 	 * 
-	 * @return float the number of seconds, with at least millisecond resolution
+	 * @return number the number of seconds, with at least millisecond resolution
 	 */
 	public function getCompleteTime() {
 		return $this->_completeTime - $this->_startTime;
@@ -134,7 +134,7 @@ class DBLog {
 	 * processing resultset records into objects.  As such, it may not represent the full time of the query.
 	 * Mostly, it's here as informational purposes.
 	 * 
-	 * @return float the number of seconds, with at least millisecond resolution
+	 * @return number the number of seconds, with at least millisecond resolution
 	 */
 	public function getSplitTime() {
 		return $this->_splitTime - $this->_startTime;
