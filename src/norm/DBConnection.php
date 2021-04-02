@@ -417,7 +417,10 @@ abstract class DBConnection {
 		echo('<div class="log-summary">total db time ' . number_format($this->_queryLogTotal * 1000, 2) . 'ms</div>');
 		foreach ($this->getQueryLog() AS $queryLog) {
 			echo('<div class="log-entry">');
-			echo('<div class="log-key">'.$queryLog->getQueryString().'</div>');
+			$query = rtrim($queryLog->getQueryString(), ';');
+			$query = str_replace(',', ',<wbr>', $query);
+			$query = str_replace(')', ')<wbr>', $query);
+			echo('<div class="log-key">'.$query.'</div>');
 			if ($queryLog->isCompleted()) {
 				echo('<div class="log-value">' . $queryLog->getRowsAffected() . ' rows affected in ' . number_format($queryLog->getCompleteTime() * 1000.0, 2) . 'ms</div>');
 			} else

@@ -38,6 +38,13 @@ abstract class DBEntity {
 	protected static $_idField = 'id';
 	
 	/**
+	 * True if the id field is numeric in value, i.e. doesn't need quoting.
+	 * 
+	 * @var bool
+	 */
+	protected static $_idFieldIsNumeric = true;
+	
+	/**
 	 * An array describing the data owned by this entity.  This array is filled through calls to
 	 * static::_registerOwnedData, which is called from static::declareForeignKey.
 	 * 
@@ -207,6 +214,8 @@ abstract class DBEntity {
 		$value = true;
 		if (isset(self::$_fields[$className][$field]))
 			$value = self::$_fields[$className][$field]->requiresQuoting();
+		if ($className::$_idField == $field)
+		  $value = !$className::$_idFieldIsNumeric;
 		return $value;
 	}
 	

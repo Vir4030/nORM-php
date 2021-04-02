@@ -109,6 +109,10 @@ class DBStore {
 		$this->_fieldList = $fieldList;
 	}
 	
+	public function hasFieldList() {
+	  return $this->_fieldList !== null;
+	}
+	
 	public function setGlobalFilter($globalFilter) {
 		$this->_globalFilter = $globalFilter;
 	}
