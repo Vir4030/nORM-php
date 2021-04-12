@@ -179,6 +179,8 @@ abstract class DBEntity {
 	 * @param mixed  $value the value of the field
 	 */
 	public function __set($field, $value) {
+	  if (is_array($value))
+	    throw new Exception('cannot set any field to an array: '.get_class($this).'.'.$field);
 		$value = $this->convertToDatabase($field, $value);
 		if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
 			if (isset($this->_changedProperties[$field]))
@@ -494,6 +496,9 @@ abstract class DBEntity {
 		foreach ($this->_ownedObjectCache AS $keyName => $ownedObjectArray) {
 			/* @var $key DBForeignKey */
 			$key = DBForeignKey::get($keyName);
+			if ($key->getPrimaryEntityClass() != get_called_class()) {
+			  continue;
+			}
 			$foreignColumn = $key->getForeignColumns();
 			if (is_array($foreignColumn))
 				error_log('warning: will not save multiple column key '.$keyName.'\n');
@@ -659,7 +664,7 @@ abstract class DBEntity {
 	 * @return DBEntity
 	 */
 	public static function get($selector) {
-		if ($selector == null) {
+		if ($selector === null) {
 			throw new Exception('selector must be specified with get');
 		}
 		return static::getStore()->get($selector);
@@ -732,6 +737,8 @@ abstract class DBEntity {
 		$foreignColumns = $key->getForeignColumns();
 		if (!is_array($foreignColumns))
 			$ownedInstance->__set($foreignColumns, $this->getId());
+		if ($key->getPrimaryEntityClass() != get_called_class())
+		  throw new Exception('key name '.$keyName.' belongs to '.$key->getPrimaryEntityClass().' instead of '.get_called_class());
 		
 		$class = get_class($this);
 		if ($class::$_indexOwnedData) {
@@ -1120,6 +1127,11 @@ abstract class DBEntity {
 		return isset(self::$_fields[$className][$name]);
 	}
 	
+	/**
+	 * Gets the fields for this entity.
+	 * 
+	 * @return DBField[]
+	 */
 	public static function getFields() {
 		$className = get_called_class();
 		return self::$_fields[$className];

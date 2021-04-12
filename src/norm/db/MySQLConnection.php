@@ -100,6 +100,8 @@ class MySQLConnection extends DBConnection {
 		foreach ($fields AS $key => $value) {
 			if ($count++)
 				$sql .= ', ';
+			if (is_array($value))
+			  throw new Exception('trying to update = array for '.$class.'.'.$key);
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ' WHERE ';

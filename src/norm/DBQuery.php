@@ -107,7 +107,7 @@ class DBQuery {
 				}
 				$sql .= self::SQL_FOR($conn, $class, $key, $value);
 			}
-		} else if ($this->_selector) { // this code is somewhat untested
+		} else if ($this->_selector !== null) {
 			if (is_array($class::getIdField())) {
 				throw new Exception('key with multiple fields requires array-based selector');
 			}
