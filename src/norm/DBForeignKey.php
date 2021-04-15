@@ -14,6 +14,13 @@ class DBForeignKey {
 	
 	private static $_keyCache = array();
 	
+	/**
+	 * Gets the key for the given name.
+	 * 
+	 * @param string $keyName
+	 * @throws Exception
+	 * @return DBForeignKey
+	 */
 	public static function get($keyName) {
 		if (is_array($keyName) || is_object($keyName))
 			throw new Exception('key name cannot be an array or object');

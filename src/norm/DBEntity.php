@@ -478,6 +478,23 @@ abstract class DBEntity {
 		static::getStore()->refreshAll();
 	}
 	
+	public static function getOwnedKeys() {
+	  return array_keys(self::$_ownedData);
+	}
+	
+	/**
+	 * Gets all the owned data for this object.
+	 * 
+	 * @return DBEntity[]
+	 */
+	public function getOwnedData() {
+	  $data = array();
+	  foreach (self::$_ownedData AS $key => $bool) {
+	    $data[$key] = $this->_ownedObjectCache[$key];
+	  }
+	  return $data;
+	}
+	
 	/**
 	 * Saves this object to the backing database.  This method is always called by the backing store
 	 * to save the data, and can be used by child classes to modify this behavior.
