@@ -490,7 +490,8 @@ abstract class DBEntity {
 	public function getOwnedData() {
 	  $data = array();
 	  foreach (self::$_ownedData AS $key => $bool) {
-	    $data[$key] = $this->_ownedObjectCache[$key];
+	    if (isset($this->_ownedObjectCache[$key]))
+	     $data[$key] = $this->_ownedObjectCache[$key];
 	  }
 	  return $data;
 	}
