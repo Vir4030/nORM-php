@@ -181,8 +181,9 @@ abstract class DBEntity {
 	public function __set($field, $value) {
 	  if (is_array($value))
 	    throw new Exception('cannot set any field to an array: '.get_class($this).'.'.$field);
-		$value = $this->convertToDatabase($field, $value);
-		if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
+	  if ($value !== null)
+	   $value = $this->convertToDatabase($field, $value);
+	  if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
 			if (isset($this->_changedProperties[$field]))
 				unset($this->_changedProperties[$field]);
 		} else if (!isset($this->_changedProperties[$field]) || ($value !== $this->_changedProperties[$field])) {
