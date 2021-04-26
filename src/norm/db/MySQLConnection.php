@@ -15,13 +15,16 @@ class MySQLConnection extends DBConnection {
 					$this->getPort()
 				);
 			} else {
-				$this->_db = mysqli_connect(
+			  $this->_db = mysqli_connect(
 					$this->getHost(),
 					$this->getUsername(),
 					$this->getPassword(),
 					$this->getCatalog(),
 					$this->getPort()
 				);
+			}
+			if (!$this->_db) {
+			  throw new Exception('database could not be connected: '.mysqli_connect_error());
 			}
 			$this->logQueryEnd();
 		}
