@@ -95,11 +95,6 @@ class DBField {
 			$outValue = $outValue ? true : false;
 		else if ($this->getDateFormat() && $outValue)
 			$outValue = strtotime($outValue . ' GMT');
-		else if (!$this->requiresQuoting) {
-		  $int = intval($outValue);
-		  $float = floatval($outValue);
-		  $outValue = ($int == $float) ? $int : $float;
-		}
 		return $outValue;
 	}
 }
