@@ -31,6 +31,8 @@ class DBField {
 	 */
 	public static $TYPE_BIT;
 	
+	const NULL = '__NULL__';
+	
 	private $requiresQuoting;
 	
 	private $dateFormat;
@@ -69,7 +71,7 @@ class DBField {
 		if (is_array($inValue))
 			throw new Exception("cannot convert an array to the database");
 		if ($inValue === null)
-		  return null;
+		  return self::NULL;
 		
 		$outValue = $inValue;
 		if ($this->binaryOnly)
@@ -78,16 +80,12 @@ class DBField {
 			if (!is_numeric($outValue))
 				throw new Exception('invalid PHP date value (expecting numeric time) - ' . $outValue);
 			$outValue = gmdate($this->getDateFormat(), $outValue);
-		} else if (!$this->requiresQuoting) {
-		  $int = intval($outValue);
-		  $float = floatval($outValue);
-		  $outValue = ($int == $float) ? $int : $float;
 		}
 		return ($this->requiresQuoting() ? ''.$outValue : $outValue);
 	}
 	
 	public function convertFromDatabase($inValue) {
-	  if ($inValue === null)
+	  if (($inValue === null) || ($inValue === self::NULL))
 	    return null;
 	  
 		$outValue = $inValue;
@@ -95,11 +93,6 @@ class DBField {
 			$outValue = $outValue ? true : false;
 		else if ($this->getDateFormat() && $outValue)
 			$outValue = strtotime($outValue . ' GMT');
-		else if (!$this->requiresQuoting) {
-		  $int = intval($outValue);
-		  $float = floatval($outValue);
-		  $outValue = ($int == $float) ? $int : $float;
-		}
 		return $outValue;
 	}
 }

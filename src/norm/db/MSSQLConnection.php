@@ -173,6 +173,9 @@ class MSSQLConnection extends DBConnection {
 	}
 
 	public function quote($unsafeValue, $requiresQuoting = true) {
+	  if (($unsafeValue === null) || ($unsafeValue === DBField::NULL))
+	    return 'null';
+	  
 		$safeValue = str_replace("'", "''", $unsafeValue);
 		if ($requiresQuoting)
 			$safeValue = "'" . $safeValue . "'";

@@ -182,10 +182,12 @@ abstract class DBEntity {
 	  if (is_array($value))
 	    throw new Exception('cannot set any field to an array: '.get_class($this).'.'.$field);
 	  if ($value !== null)
-	   $value = $this->convertToDatabase($field, $value);
+	    $value = $this->convertToDatabase($field, $value);
 	  if (isset($this->_properties[$field]) && ($value === $this->_properties[$field])) {
 			if (isset($this->_changedProperties[$field]))
 				unset($this->_changedProperties[$field]);
+	  } else if ($value === null) {
+	    $this->_changedProperties[$field] = DBField::NULL;
 		} else if (!isset($this->_changedProperties[$field]) || ($value !== $this->_changedProperties[$field])) {
 			$this->_changedProperties[$field] = $value;
 		}
@@ -507,8 +509,12 @@ abstract class DBEntity {
 		$recordUpdated = false;
 		if (count($this->_changedProperties) > 0) {
 			static::getStore()->save($this);
-			foreach ($this->_changedProperties AS $key => $value)
-				$this->_properties[$key] = $value;
+			foreach ($this->_changedProperties AS $key => $value) {
+			  if ($value === DBField::NULL)
+			    unset($this->_properties[$key]);
+			  else
+			    $this->_properties[$key] = $value;
+			}
 			$this->_changedProperties = array();
 			$recordUpdated = true;
 		}
