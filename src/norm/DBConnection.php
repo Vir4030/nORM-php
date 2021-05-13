@@ -268,6 +268,16 @@ abstract class DBConnection {
 	public abstract function quote($unsafeValue, $requiresQuoting = true);
 	
 	/**
+	 * Protects the given unsafe value as a number which does not require quoting.
+	 * 
+	 * @param number $unsafeValue
+	 * @return string the safe value ready for use in an SQL statement
+	 */
+	public function number($unsafeValue) {
+	  return $this->quote($unsafeValue, false);
+	}
+	
+	/**
 	 * Gets the SQL to use for pagination after the SELECT keyword.  This method does
 	 * not return any trailing or leading spaces.
 	 * 

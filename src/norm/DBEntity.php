@@ -230,21 +230,14 @@ abstract class DBEntity {
 	 * @param array $properties
 	 */
 	public function setProperties($properties) {
-		echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId()."\n");
-		foreach ($properties AS $key => $value) {
-			if (!isset($this->_properties[$key])) {
-				if ($value !== null)
-					echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." added as ".$value."\n");
-			} else if ($value != $this->_properties[$key]) {
-				echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." changed from ".$this->_properties[$key]." to ".$value."\n");
-			}
-		}
-		foreach ($this->_properties AS $key => $value) {
-			if (!isset($properties[$key]) && ($value !== null)) {
-				echo("[DBEntity:setProperties] ".get_called_class()."#".$this->getId().".".$key." removed from ".$value."\n");
-			}
-		}
 		$this->_properties = $properties;
+	}
+	
+	/**
+	 * Reverts back to all saved values.  Does not affect child objects.
+	 */
+	public function revert() {
+	  $this->_changedProperties = array();
 	}
 	
 	/**
@@ -953,9 +946,15 @@ abstract class DBEntity {
 		// an array which is indexed and has the same number of values as the number of keys
 		// ^ this should not be handled with a new DBQuery (subquery)
 		// of course, this is not supported yet, and will not be needed for any future databases
-		if (is_array($selector))
-			$subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
-		else if (is_null($selector))
+		if (is_array($selector)) {
+		  
+		  // if there's only one selector and it's the primary key of the reference table,
+		  // then just apply the filter to the foreign column
+		  if ((count($selector) == 1) && isset($selector[$primaryColumns]))
+		    $subSelector = array($foreignColumns => $selector[$primaryColumns]);
+		  else
+		    $subSelector = array($foreignColumns => new DBQuery($key->getPrimaryEntityClass(), $primaryColumns, $selector));
+		} else if (is_null($selector))
 			$subSelector = null;
 		else
 			$subSelector = array($foreignColumns => $selector);
