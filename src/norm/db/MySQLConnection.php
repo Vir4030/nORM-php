@@ -47,9 +47,11 @@ class MySQLConnection extends DBConnection {
 			$this->logQueryError($message);
 			throw new Exception($message);
 		}
-		if (is_object($rs))
+		if (is_object($rs)) {
 			$this->logQueryRows($rs->num_rows);
-		$this->logQuerySplit();
+			$this->logQuerySplit();
+		} else
+		  $this->logQueryEnd();
 		return $rs;
 	}
 

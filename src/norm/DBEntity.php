@@ -621,6 +621,20 @@ abstract class DBEntity {
 	}
 	
 	/**
+	 * Loads any fields found as a key in the given array.  Any keys in the array which
+	 * do not match a field on this object are ignored.
+	 * 
+	 * @param mixed[] $array
+	 */
+	public function loadFromArray($array) {
+	  /* @var $field DBField */
+	  foreach ($this->getFields() AS $key => $field) {
+	    if (isset($array[$key]))
+	      $this->__set($key, $array[$key]);
+	  }
+	}
+	
+	/**
 	 * Gets the store for this class.
 	 * 
 	 * @return DBStore

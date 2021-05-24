@@ -252,6 +252,7 @@ class DBStore {
 		} else {
 			$entity->markForDeletion();
 		}
+		$this->_connection->free_result($rs);
 	}
 	
 	/**
@@ -278,7 +279,7 @@ class DBStore {
 		$rs = $this->queryPrimitive($selector, $orderBy);
 		return $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
 	}
-
+  
 	/**
 	 * Gets the first number of entities from the database matching the given criteria.
 	 * Ignores cached data, but the engine still merges if a record is re-selected.
