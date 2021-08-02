@@ -3,6 +3,8 @@ class MySQLConnection extends DBConnection {
 	
 	private $_db;
 	
+	private $_connected = false;
+	
 	public function connect() {
 		if (!$this->_db) {
 			$this->logQueryBegin('CONNECTING TO ' . $this->getHost() . ', CATALOG ' . $this->getCatalog());
@@ -27,13 +29,33 @@ class MySQLConnection extends DBConnection {
 			  throw new Exception('database could not be connected: '.mysqli_connect_error());
 			}
 			$this->logQueryEnd();
+			$this->_connected = true;
+		} else if (!$this->_connected) {
+		  if ($this->getPooling()) {
+		    $this->_db->connect(
+		        'p:'.$this->getHost(),
+		        $this->getUsername(),
+		        $this->getPassword(),
+		        $this->getCatalog(),
+		        $this->getPort());
+		  } else {
+		    $this->_db->connect(
+		        $this->getHost(),
+		        $this->getUsername(),
+		        $this->getPassword(),
+		        $this->getCatalog(),
+		        $this->getPort());
+		  }
 		}
+		if (!$this->_db->ping())
+		  throw new Exception('no ping after connection');
+		$this->_connected = true;
 	}
 	
 	public function disconnect() {
 		if ($this->_db)
 			$this->_db->close();
-		$this->_db = null;
+		$this->_connected = false;
 	}
 	
 	public function query($sql) {
@@ -47,9 +69,11 @@ class MySQLConnection extends DBConnection {
 			$this->logQueryError($message);
 			throw new Exception($message);
 		}
-		if (is_object($rs))
+		if (is_object($rs)) {
 			$this->logQueryRows($rs->num_rows);
-		$this->logQuerySplit();
+			$this->logQuerySplit();
+		} else
+		  $this->logQueryEnd();
 		return $rs;
 	}
 
@@ -173,6 +197,10 @@ class MySQLConnection extends DBConnection {
 	public function free_result($rs) {
 		mysqli_free_result($rs);
 		$this->logQueryEnd();
+	}
+	
+	public function ping() {
+	  return $this->_db->ping();
 	}
 	
 	public function quote($unsafeValue, $requiresQuoting = true) {

@@ -126,9 +126,7 @@ abstract class DBConnection {
 	public static function get($name) {
 		if (!$name)
 			throw new Exception('database connection name not supplied');
-		if (!isset(DBConnection::$_cachedConnections[$name]))
-			throw new Exception('cannot find database connection for ' . $name);
-		return DBConnection::$_cachedConnections[$name];
+		return isset(DBConnection::$_cachedConnections[$name]) ? DBConnection::$_cachedConnections[$name] : null;
 	}
 	
 	/**
@@ -255,6 +253,13 @@ abstract class DBConnection {
 	public abstract function free_result($rs);
 	
 	/**
+	 * Pings the database.
+	 * 
+	 * @return bool true if the ping was successful
+	 */
+	public abstract function ping();
+	
+	/**
 	 * Protects and quotes, if necessary, the given unsafe value.  It is possible to
 	 * write a connection that would query column data from the database itself on
 	 * first use of a specific table.  These connections could also clean up data
@@ -324,6 +329,10 @@ abstract class DBConnection {
 		return $this->_host;
 	}
 	
+	public function setHost($host) {
+	  $this->_host = $host;
+	}
+	
 	/**
 	 * Gets the username for authentication into the database.
 	 * 
@@ -331,6 +340,10 @@ abstract class DBConnection {
 	 */
 	public function getUsername() {
 		return $this->_username;
+	}
+	
+	public function setUsername($username) {
+	  $this->_username = $username;
 	}
 	
 	/**
@@ -342,6 +355,10 @@ abstract class DBConnection {
 		return $this->_password;
 	}
 	
+	public function setPassword($password) {
+	  $this->_password = $password;
+	}
+	
 	/**
 	 * Gets the port number for the database connection.
 	 * 
@@ -349,6 +366,10 @@ abstract class DBConnection {
 	 */
 	public function getPort() {
 		return $this->_port;
+	}
+	
+	public function setPort($port) {
+	  $this->_port = $port;
 	}
 	
 	/**
@@ -360,6 +381,10 @@ abstract class DBConnection {
 		return $this->_catalog;
 	}
 	
+	public function setCatalog($catalog) {
+	  $this->_catalog = $catalog;
+	}
+	
 	/**
 	 * Checks if this connection uses pooling.
 	 * 
@@ -367,6 +392,10 @@ abstract class DBConnection {
 	 */
 	public function getPooling() {
 		return $this->_pooling;
+	}
+	
+	public function setPooling($pooling) {
+	  $this->_pooling = $pooling;
 	}
 	
 	/**

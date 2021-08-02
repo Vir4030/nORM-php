@@ -219,7 +219,6 @@ class DBStore {
 	 *   the value of the primary key or a key-value pairing array
 	 */
 	public function get($selector) {
-		$class = $this->_class;
 		if (!is_array($selector) && isset($this->_cachedEntities[$selector]))
 			return $this->_cachedEntities[$selector];
 
@@ -240,7 +239,6 @@ class DBStore {
 	 * @throws Exception
 	 */
 	public function refresh($entity) {
-		$class = $this->_class;
 		if (!$entity->getLocalUniqueIdentifier())
 			throw new Exception("cannot refresh entity which doesn't have an ID value");
 	
@@ -252,6 +250,7 @@ class DBStore {
 		} else {
 			$entity->markForDeletion();
 		}
+		$this->_connection->free_result($rs);
 	}
 	
 	/**
@@ -267,8 +266,6 @@ class DBStore {
 	 * @return array[DBEntity]
 	 */
 	public function getAll($selector = null, $orderBy = null, $indexedBy = null) {
-		$results = array();
-		
 		if (!$selector && count($this->_cachedEntities)) {
 			if (count($this->_newEntities))
 				return array_merge($this->_cachedEntities, $this->_newEntities);
@@ -278,7 +275,7 @@ class DBStore {
 		$rs = $this->queryPrimitive($selector, $orderBy);
 		return $this->createEntitiesFromResultset($rs, (($orderBy == null) || $indexedBy), $indexedBy);
 	}
-
+  
 	/**
 	 * Gets the first number of entities from the database matching the given criteria.
 	 * Ignores cached data, but the engine still merges if a record is re-selected.
@@ -291,8 +288,6 @@ class DBStore {
 	 * @return array[DBEntity] the entities
 	 */
 	public function getFirst($selector = null, $orderBy = null, $maxRecords, $offset = 0) {
-		$results = array();
-		
 		$rs = $this->queryPrimitive($selector, $orderBy, $maxRecords, $offset);
 		return $this->createEntitiesFromResultset($rs);
 	}

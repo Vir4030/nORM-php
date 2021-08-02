@@ -24,7 +24,7 @@ class NormJS {
         $js .= '.set_'.$field.'('.$item::DB()->quote($value, $item::requiresQuoting($field)).')';
     }
     
-    foreach ($item->getOwnedData() AS $keyName => $data) {
+    foreach ($item->getOwnedData() AS $data) {
       foreach ($data AS $subitem) {
         $js .= '.add_owned('.get_class($subitem).', '.self::CREATE_JS($subitem).')';
       }

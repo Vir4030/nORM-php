@@ -435,7 +435,7 @@ abstract class DBEntity {
 	 * Deletes this entity immediately in the backing store, as well as all owned entities.
 	 */
 	public function delete() {
-		foreach ($this->_ownedObjectCache as $keyName => $ownedObjectArray) {
+		foreach ($this->_ownedObjectCache as $ownedObjectArray) {
 			/* @var $ownedEntity DBEntity */
 			foreach ($ownedObjectArray as $ownedEntity)
 				$ownedEntity->delete();
@@ -449,7 +449,7 @@ abstract class DBEntity {
 	 */
 	public function refresh($refreshedOwned = true) {
 		if ($refreshedOwned) {
-			foreach ($this->_ownedObjectCache AS $keyName => $ownedObjectArray) {
+			foreach ($this->_ownedObjectCache AS $ownedObjectArray) {
 				/* @var $ownedEntity DBEntity */
 				foreach ($ownedObjectArray as $ownedEntity)
 					$ownedEntity->refresh();
@@ -466,7 +466,7 @@ abstract class DBEntity {
 	}
 	
 	public static function refreshAll() {
-		foreach (self::$_ownedData AS $name => $foreignKey) {
+		foreach (self::$_ownedData AS $foreignKey) {
 			if (get_called_class() == $foreignKey->getPrimaryEntityClass()) {
 				/* @var $class DBEntity */
 				$class = $foreignKey->getForeignEntityClass();
@@ -487,7 +487,7 @@ abstract class DBEntity {
 	 */
 	public function getOwnedData() {
 	  $data = array();
-	  foreach (self::$_ownedData AS $key => $bool) {
+	  foreach (array_keys(self::$_ownedData) AS $key) { //  => $bool
 	    if (isset($this->_ownedObjectCache[$key]))
 	     $data[$key] = $this->_ownedObjectCache[$key];
 	  }
@@ -638,6 +638,20 @@ abstract class DBEntity {
 		/* @var $store DBStore */
 		$store = $class::getStore();
 		return $store->getAll(array($foreignField => $this->getId()));
+	}
+	
+	/**
+	 * Loads any fields found as a key in the given array.  Any keys in the array which
+	 * do not match a field on this object are ignored.
+	 * 
+	 * @param mixed[] $array
+	 */
+	public function loadFromArray($array) {
+	  /* @var $field DBField */
+	  foreach ($this->getFields() AS $key => $field) {
+	    if (isset($array[$key]))
+	      $this->__set($key, $array[$key]);
+	  }
 	}
 	
 	/**
@@ -1052,7 +1066,7 @@ abstract class DBEntity {
 	 * @param mixed[] $subForeignArray
 	 */
 	private static function _loadForeignData($key, $selector, $subForeignArray, $subFilter = array()) {
-		$primaryClass = $key->getPrimaryEntityClass();
+		//$primaryClass = $key->getPrimaryEntityClass();
 		$primaryColumns = $key->getPrimaryColumns();
 		$foreignColumns = $key->getForeignColumns();
 		if ((is_array($foreignColumns) && (count($foreignColumns) > 1)) ||
