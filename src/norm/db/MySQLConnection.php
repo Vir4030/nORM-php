@@ -154,7 +154,7 @@ class MySQLConnection extends DBConnection {
 		if (!mysqli_query($this->_db, $sql)) {
 			$message = mysqli_error($this->_db);
 			$this->logQueryError($message);
-			throw new Exception($message);
+			throw new Exception($tableName.': '.$message);
 		}
 		$rows = mysqli_affected_rows($this->_db);
 		$this->logQueryRows($rows);

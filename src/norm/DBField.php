@@ -81,7 +81,7 @@ class DBField {
 				throw new Exception('invalid PHP date value (expecting numeric time) - ' . $outValue);
 			$outValue = gmdate($this->getDateFormat(), $outValue);
 		}
-		return ($this->requiresQuoting() ? ''.$outValue : $outValue);
+		return ''.$outValue;
 	}
 	
 	public function convertFromDatabase($inValue) {
@@ -93,6 +93,11 @@ class DBField {
 			$outValue = $outValue ? true : false;
 		else if ($this->getDateFormat() && $outValue)
 			$outValue = strtotime($outValue . ' GMT');
+        else if (!$this->requiresQuoting) {
+			$float = floatval($outValue);
+			$int = intval($outValue);
+			$outValue = ($float == $int) ? $int : $float;
+        }
 		return $outValue;
 	}
 }

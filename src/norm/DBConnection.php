@@ -310,7 +310,6 @@ abstract class DBConnection {
 	 * Gets the type of database to be used.  This is one of the constants found in the DBType class.
 	 * 
 	 * @return string the type, a constant from the DBType class
-	 * @see DBType
 	 */
 	public function getType() {
 		return $this->_type;

@@ -197,6 +197,8 @@ abstract class DBEntity {
 		$className = get_called_class();
 		if (isset(self::$_fields[$className][$field]))
 			$value = self::$_fields[$className][$field]->convertFromDatabase($value);
+		else if ($field == $className::getIdField())
+		    $value = intval($value);
 		return $value;
 	}
 	
@@ -376,7 +378,7 @@ abstract class DBEntity {
 			}
 		}
 		else {
-			$id = $this->$keyField;
+			$id = intval($this->$keyField);
 		}
 		return $id;
 	}
@@ -539,24 +541,14 @@ abstract class DBEntity {
 	const KEY_CHILDREN = '_children';
 	const KEY_CLASS = '_class';
 	
-	private function getJsonArray() {
-		$array = array();
-		if ($this->getId())
-			$array[$this->getIdField()] = $this->getId();
+	private function getJsonArray($includeClass = true) {
+	    $array = [];
 		
-		$array[self::KEY_CLASS] = get_class($this);
+        if ($includeClass) $array[self::KEY_CLASS] = get_class($this);
 		
 		foreach ($this->_properties AS $key => $value) {
-			if (isset($this->_changedProperties[$key]))
-				$value = $this->_changedProperties[$key];
-			if ($value !== '')
-				$array[$key] = $value;
-		}
-		foreach ($this->_changedProperties AS $key => $value) {
-			if (isset($this->_properties[$key]))
-				continue;
-			if ($value !== '')
-				$array[$key] = $value;
+		    if (!isset($array[$key]))
+		      $array[$key] = self::convertFromDatabase($key, $value);
 		}
 		
 		$childrenArray = array();
@@ -564,24 +556,44 @@ abstract class DBEntity {
 			$ownedArray = array();
 			/* @var $object DBEntity */
 			foreach ($ownedObjects AS $id => $object) {
-				$ownedArray[$id] = $object->getJsonArray();
+				$ownedArray[$id] = $object->getJsonArray($includeClass);
 			}
 			$childrenArray[$foreignKey] = $ownedArray;
 		}
 		
 		if (count($childrenArray))
 			$array[self::KEY_CHILDREN] = $childrenArray;
+
 		return $array;
 	}
 	
 	/**
 	 * Exports this object into a JSON record.
 	 */
-	public function saveToJson() {
-		return json_encode($this->getJsonArray());
+	public function saveToJson($includeClass = true) {
+		return json_encode($this->getJsonArray($includeClass));
 	}
 	
-	public function loadFromJsonArray($array) {
+	/**
+	 * Exports the objects provided into JSON as an array of objects.
+	 * 
+	 * @param DBEntity[] $entities
+	 * @return string JSON
+	 */
+	public static function SAVE_TO_JSON($entities, $includeClass = true) {
+	    $array = [];
+	    foreach ($entities AS $entity)
+	        $array[] = $entity->getJsonArray($includeClass);
+	    return json_encode($array);
+	}
+	
+	/**
+	 * Loads data into this object from the given JSON array.
+	 * 
+	 * @param mixed[] $array
+	 * @param boolean $clearUnusedFields
+	 */
+	public function loadFromJsonArray($array, $clearUnusedFields = false) {
 		if (isset($array[$this->getIdField()]))
 			$this->setId($array[$this->getIdField()]);
 		
@@ -589,6 +601,8 @@ abstract class DBEntity {
 		foreach ($this->getFields() AS $key => $field) {
 			if (isset($array[$key]))
 				$this->__set($key, $array[$key]);
+			else if ($clearUnusedFields)
+			    $this->__set($key, null);
 		}
 		
 		if (isset($array[self::KEY_CHILDREN])) {
@@ -606,12 +620,18 @@ abstract class DBEntity {
 		}
 	}
 	
-	public function loadFromJson($json) {
-		$array = json_decode($json);
-		echo('<pre>');
-		var_dump($array);
-		die();
-		$this->loadFromJsonArray();
+	/**
+	 * Loads data into this object from the given JSON.
+	 * 
+	 * @param string $json
+	 * @param boolean $clearUnusedFields
+	 * @throws Exception
+	 */
+	public function loadFromJson($json, $clearUnusedFields = false) {
+		$array = json_decode($json, true);
+		if ($array == null)
+		    throw new Exception('json could not be decoded: '.$json);
+		$this->loadFromJsonArray($array, $clearUnusedFields);
 	}
 	
 	public function getOneToManyData($class, $foreignField) {
@@ -929,7 +949,7 @@ abstract class DBEntity {
 	 * 
 	 * @param DBForeignKey $key
 	 * @param mixed $selector
-	 * @param unknown $subForeignArray
+	 * @param mixed[] $subForeignArray
 	 */
 	private static function _loadOwnedData($key, $selector, $subForeignArray = array(), $subFilter = array()) {
 		$foreignColumns = $key->getForeignColumns();
@@ -1029,7 +1049,7 @@ abstract class DBEntity {
 	 * 
 	 * @param DBForeignKey $key
 	 * @param mixed $selector
-	 * @param unknown $subForeignArray
+	 * @param mixed[] $subForeignArray
 	 */
 	private static function _loadForeignData($key, $selector, $subForeignArray, $subFilter = array()) {
 		$primaryClass = $key->getPrimaryEntityClass();
@@ -1164,5 +1184,59 @@ abstract class DBEntity {
 	public static function getFieldNames() {
 		$className = get_called_class();
 		return array_keys(self::$_fields[$className]);
+	}
+	
+	public static function createSchemaArray() {
+	    $className = get_called_class();
+	    
+	    $propertiesArray = [
+	        self::getIdField() => [
+	            'type' => 'integer'
+	        ]
+	    ];
+	    $requiredArray = [
+	        self::getIdField()
+	    ];
+	    
+	    $ownedArray = [];
+	    
+	    /* @var $field DBField */
+	    foreach (self::getFields() AS $fieldName => $field) {
+	        $fieldArray = [
+	            'type' => $field->isBinaryOnly() ? 'boolean' : ($field->requiresQuoting() ? 'string' : 'number')
+	        ];
+	        
+	        $propertiesArray[$fieldName] = $fieldArray;
+	    }
+	    
+	    foreach (self::$_foreignKeys AS $keyName => $foreignKey) {
+	        $isOwned = isset(self::$_ownedData[$keyName]);
+	        if ($isOwned && ($foreignKey->getPrimaryEntityClass() == $className)) {
+	            $propertiesArray[$foreignKey->getForeignEntityClass()] = [
+	                '$ref' => '/'.$foreignKey->getForeignEntityClass().'/schema'
+	            ];
+	            $ownedArray[$foreignKey->getForeignEntityClass()] = $foreignKey->getForeignColumns();
+	        }
+	    }
+	    
+	    $schema = [
+	        '$schema' => 'http://json-schema.org/draft-07/schema#',
+	        '$id' => $className,
+	        'type' => 'object',
+	        '$filters' => [
+	            '$func' => 'GenericId',
+	            '$vars' => [
+	                'key' => self::getIdField()
+	            ]
+	        ],
+	        'properties' => $propertiesArray,
+	        'required' => $requiredArray
+	    ];
+	    
+	    if (count($ownedArray)) {
+	        $schema['children'] = $ownedArray;
+	    }
+	    
+	    return $schema;
 	}
 }

@@ -7,7 +7,7 @@ $NORM_CLASS_RACK = array(
 		'DBLog'				=>	'norm/DBLog.php',
 		'DBQuery'			=>	'norm/DBQuery.php',
 		'DBStore'			=>	'norm/DBStore.php',
-    'NormJS'      =>  'norm/js/NormJS.php',
+        'NormJS'            =>  'norm/js/NormJS.php',
 		'MSSQLConnection'	=>	'norm/db/MSSQLConnection.php',
 		'MySQLConnection'	=>	'norm/db/MySQLConnection.php',
 );
