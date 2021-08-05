@@ -526,8 +526,10 @@ abstract class DBEntity {
 				if (!$ownedEntity)
 					throw new Exception('no owned entity for key "' . $keyName . '" and id ' . $id . ' (null in cache)');
 				if ($ownedEntity->isMarkedForDeletion()) {
-					$ownedEntity->delete();
-					unset($ownedObjectArray[$id]);
+				    if ($ownedEntity->getId()) {
+    					$ownedEntity->delete();
+    					unset($ownedObjectArray[$id]);
+				    }
 				} else {
 					$ownedEntity->__set($foreignColumn, $this->getId());
 					$ownedEntity->save();
@@ -715,7 +717,7 @@ abstract class DBEntity {
 	 * @param mixed $selector
 	 * @return DBEntity
 	 */
-	public static function get($selector) {
+	public static function GET($selector) {
 		if ($selector === null) {
 			throw new Exception('selector must be specified with get');
 		}
