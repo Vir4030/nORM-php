@@ -171,7 +171,11 @@ class MSSQLConnection extends DBConnection {
 	public function free_result($rs) {
 		mssql_free_result($rs);
 	}
-
+	
+	public function ping() {
+	    return $this->_db->ping();
+	}
+	
 	public function quote($unsafeValue, $requiresQuoting = true) {
 	  if (($unsafeValue === null) || ($unsafeValue === DBField::NULL))
 	    return 'null';

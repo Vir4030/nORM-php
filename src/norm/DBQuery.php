@@ -51,7 +51,7 @@ class DBQuery {
 					if ($count++) {
 						$sql .= ' OR ';
 					}
-					self::SQL_FOR($conn, $class, $key, $value);
+					$sql .= self::SQL_FOR($conn, $class, $key, $value);
 				}
 			} else if (isset($value['compare'])) {
 				$compare = $value['compare'];

@@ -745,11 +745,28 @@ abstract class DBEntity {
 	/**
 	 * Gets all records for this class.  If a selector is provided, then these records are
 	 * loaded from the database.
-	 * 
+	 *
+	 * @deprecated DBEntity::GET_ALL()
 	 * @return array[DBEntity]
 	 */
 	public static function getAll($selector = null, $orderedBy = null, $indexed = null) {
 		return static::getStore()->getAll($selector, $orderedBy, $indexed);
+	}
+	
+	/**
+	 * Gets all records for this class.  If a selector is provided, then these records are
+	 * loaded from the database.
+	 *
+	 */
+	/**
+	 * Gets all rec
+	 * @param mixed $selector
+	 * @param string|string[] $orderedBy
+	 * @param string|string[] $indexed
+	 * @return DBEntity[]
+	 */
+	public static function GET_ALL($selector = null, $orderedBy = null, $indexed = null) {
+	    return static::getStore()->getAll($selector, $orderedBy, $indexed);
 	}
 	
 	/**
