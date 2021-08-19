@@ -86,6 +86,46 @@ class MySQLConnection extends DBConnection {
 		return $field;
 	}
 	
+	private function execute($sql) {
+	    $this->logQueryBegin($sql);
+	    if (!mysqli_query($this->_db, $sql)) {
+	        $message = mysqli_error($this->_db);
+	        $this->logQueryError($message);
+	        throw new Exception($message . ': ' . $sql);
+	    }
+	    $rows = mysqli_affected_rows($this->_db);
+	    $this->logQueryRows($rows);
+	    $this->logQueryEnd();
+	    return $rows;
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::rollback()
+	 */
+	public function rollback() {
+	    return $this->execute('ROLLBACK;');
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::beginTransaction()
+	 */
+	public function beginTransaction() {
+	    return $this->execute('START TRANSACTION;');
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::commit()
+	 */
+	public function commit() {
+	    return $this->execute('COMMIT;');
+	}
+	
 	/**
 	 * (non-PHPdoc)
 	 * @see DBConnection::delete()
@@ -100,16 +140,7 @@ class MySQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
-		$this->logQueryBegin($sql);
-		if (!mysqli_query($this->_db, $sql)) {
-			$message = mysqli_error($this->_db);
-			$this->logQueryError($message);
-			throw new Exception($message . ': ' . $sql);
-		}
-		$rows = mysqli_affected_rows($this->_db);
-		$this->logQueryRows($rows);
-		$this->logQueryEnd();
-		return $rows;
+		return $this->execute($sql);
 	}
 	
 	/**
@@ -139,16 +170,7 @@ class MySQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
-		$this->logQueryBegin($sql);
-		if (!mysqli_query($this->_db, $sql)) {
-			$message = mysqli_error($this->_db);
-			$this->logQueryError($message);
-			throw new Exception($message . ': ' . $sql);
-		}
-		$rows = mysqli_affected_rows($this->_db);
-		$this->logQueryRows($rows);
-		$this->logQueryEnd();
-		return $rows;
+		return $this->execute($sql);
 	}
 	
 	/**

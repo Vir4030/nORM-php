@@ -233,6 +233,12 @@ abstract class DBConnection {
 	 */
 	public abstract function delete($class, $idArray);
 	
+	public abstract function beginTransaction();
+	
+	public abstract function commit();
+	
+	public abstract function rollback();
+	
 	/**
 	 * Fetches an associative key-value array for the next record in the resultset.
 	 * If there isn't a next record, null is returned.

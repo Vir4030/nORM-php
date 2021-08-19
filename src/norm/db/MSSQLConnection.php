@@ -61,6 +61,45 @@ class MSSQLConnection extends DBConnection {
 		return $field;
 	}
 	
+	private function execute($sql) {
+	    $this->logQueryBegin($sql);
+	    if (mssql_query($sql, $this->_db) === false) {
+	        $message = mssql_get_last_message();
+	        $this->logQueryError($message);
+	        throw new Exception($message);
+	    }
+	    
+	    $this->logQueryEnd();
+	    return mssql_rows_affected($this->_db);
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::rollback()
+	 */
+	public function rollback() {
+	    return $this->execute('ROLLBACK;');
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::beginTransaction()
+	 */
+	public function beginTransaction() {
+	    return $this->execute('START TRANSACTION;');
+	}
+	
+	/**
+	 *
+	 * {@inheritDoc}
+	 * @see DBConnection::commit()
+	 */
+	public function commit() {
+	    return $this->execute('COMMIT;');
+	}
+	
 	/**
 	 * (non-PHPdoc)
 	 * @see DBConnection::delete()
@@ -75,15 +114,7 @@ class MSSQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
-		$this->logQueryBegin($sql);
-		if (mssql_query($sql, $this->_db) === false) {
-			$message = mssql_get_last_message();
-			$this->logQueryError($message);
-			throw new Exception($message);
-		}
-		
-		$this->logQueryEnd();
-		return mssql_rows_affected($this->_db);
+		return $this->execute($sql);
 	}
 	
 	/**
@@ -111,16 +142,7 @@ class MSSQLConnection extends DBConnection {
 			$sql .= $key . ' = ' . $this->quote($value, $class::requiresQuoting($key));
 		}
 		$sql .= ';';
-		
-		$this->logQueryBegin($sql);
-		if (mssql_query($sql, $this->_db) === false) {
-			$message = mssql_get_last_message();
-			$this->logQueryError($message);
-			throw new Exception($message);
-		}
-		
-		$this->logQueryEnd();
-		return mssql_rows_affected($this->_db);
+		return $this->execute($sql);
 	}
 	
 	/**
