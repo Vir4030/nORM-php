@@ -1,4 +1,6 @@
 <?php
+global $NORM_CLASS_RACK;
+
 $NORM_CLASS_RACK = array(
 		'DBConnection'		=>	'norm/DBConnection.php',
 		'DBEntity'			=>	'norm/DBEntity.php',
@@ -15,7 +17,7 @@ $NORM_CLASS_RACK = array(
 function autoload_norm($class) {
 	global $NORM_CLASS_RACK;
 	if (isset($NORM_CLASS_RACK[$class]))
-		include $NORM_CLASS_RACK[$class];
+		include __DIR__ . '/' . $NORM_CLASS_RACK[$class];
 }
 
 spl_autoload_register('autoload_norm');
